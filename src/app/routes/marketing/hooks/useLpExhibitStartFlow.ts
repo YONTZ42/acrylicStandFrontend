@@ -9,7 +9,7 @@ import { upsertExhibit } from "@/features/exhibits/api";
 export function useLpExhibitStartFlow() {
   const navigate = useNavigate();
   const { ensureGuestId, status } = useAuthContext();
-  const { uploadImageAndGetUrl, isUploading } = useExhibitImageUpload();
+  const { isUploading } = useExhibitImageUpload();
   const { mutateAsync: createGalleryAsync } = useCreateGallery();
 
   const [isProcessing, setIsProcessing] = useState(false);
@@ -42,7 +42,7 @@ export function useLpExhibitStartFlow() {
 
       const galleries = await listGalleries("guest");
       const anyData = galleries as any;
-      const existingGalleries = Array.isArray(anyData) ? anyData : (anyData?.results ?? []);
+      //const existingGalleries = Array.isArray(anyData) ? anyData : (anyData?.results ?? []);
 
       let targetId: string;
       let nextSlotIndex = 0;

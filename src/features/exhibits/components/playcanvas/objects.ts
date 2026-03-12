@@ -81,7 +81,6 @@ export function createPlateMaterial(pc: PlayCanvas, tex: import("playcanvas").Te
 // -----------------------------
 export function createFloor(
   pc: PlayCanvas,
-  app: import("playcanvas").AppBase,
   parent: import("playcanvas").Entity
 ) {
   const floor = new pc.Entity("floor");
@@ -241,7 +240,7 @@ export function createAcrylicShowcase(
   const root = new pc.Entity("acrylic-showcase-root");
   app.root.addChild(root);
 
-  createFloor(pc, app, root);
+  createFloor(pc,root);
 
   const caseW = caseOpt.caseWidth ?? 1.25;
   const caseH = caseOpt.caseHeight ?? 2.2;

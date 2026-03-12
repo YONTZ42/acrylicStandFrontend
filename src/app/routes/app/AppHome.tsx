@@ -1,4 +1,4 @@
-import React, { useMemo, useCallback, useState, useEffect } from "react";
+import React, {  useCallback, useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { useAuthContext } from "@/features/auth/AuthProvider";
 import { AppFooterTabs, type AppTabKey } from "@/app/layouts/AppFooterTabs";
@@ -11,7 +11,7 @@ type NavState = {
 };
 
 export function AppHome(): React.ReactElement {
-  const { isReady, status } = useAuthContext();
+  const { isReady } = useAuthContext();
   const location = useLocation();
 
   const [activeTab, setActiveTab] = useState<AppTabKey>("library");

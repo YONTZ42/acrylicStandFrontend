@@ -1,6 +1,6 @@
 // src/shared/components/PhotoCutoutPanel/steps/ObjectRefiner.tsx
 
-import React, { useRef, useState, useEffect } from "react";
+import React, { useRef, useState } from "react";
 import { Loader2, Eraser, Layers, Check } from "lucide-react";
 import { PhotoCutoutStage } from "../PhotoCutoutStage";
 import { useKonvaDraw } from "@/shared/hooks/useKonvaDraw";

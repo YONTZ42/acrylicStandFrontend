@@ -125,7 +125,7 @@ export const PhotoCutoutPanel: React.FC<Props> = ({
     setIsProcessing(true);
     try {
       const newBlob = "";
-      pushState(newBlob);
+
       resetDraw();
     } finally {
       setIsProcessing(false);

@@ -1,6 +1,5 @@
 // src/app/routes/marketing/LandingPage.tsx
 import { cn } from "@/shared/utils/cn";
-import { ImagePicker } from "@/shared/components/ImagePicker";
 import { useLpExhibitStartFlow } from "@/app/routes/marketing/hooks/useLpExhibitStartFlow";
 
 export function LandingPage() {
@@ -11,8 +10,6 @@ export function LandingPage() {
     isLoading,
     error,
     status,
-    imageProps,
-    finalizeExhibition
   } = useLpExhibitStartFlow();
 
   const isAuth = status === "authenticated";
@@ -68,17 +65,6 @@ export function LandingPage() {
               </button>
             </div>
 
-            {/* 新しいインターフェースの ImagePicker */}
-            <ImagePicker {...imageProps} disabled={isLoading} />
-            {imageProps.imageOriginalUrl && (
-              <button
-                onClick={finalizeExhibition}
-                disabled={isLoading}
-                className="w-full py-4 bg-white text-black text-sm font-bold uppercase tracking-widest hover:bg-white/90 disabled:opacity-40 transition-all"
-              >
-                {isLoading ? "Curating..." : "Start Exhibition with this image"}
-              </button>
-            )}
           </div>
         </div>
       )}

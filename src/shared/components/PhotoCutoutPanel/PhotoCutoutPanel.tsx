@@ -1,7 +1,7 @@
 // src/shared/components/PhotoCutoutPanel/PhotoCutoutPanel.tsx
 
 import React, { useState } from "react";
-import { Scissors, Eraser, Sparkles, Layers } from "lucide-react";
+import { Scissors, Sparkles, Layers } from "lucide-react";
 import { runRembg } from "@/shared/utils/imageProcessingFromLambda";
 import { useExhibitImageUpload } from "@/features/exhibits/hooks/useExhibitImageUpload";
 // ... 他のインポート

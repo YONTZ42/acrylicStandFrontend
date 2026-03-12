@@ -1,5 +1,5 @@
 // src/features/exhibits/components/ExhibitEditorModal/tools/ToolObjectRefine.tsx
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef } from "react";
 import { Check, Layers, AlertCircle } from "lucide-react";
 import { runDetectObjectMasks, cutoutWithUnionMasks, type MaskLayer } from "@/shared/utils/imageCropMultiObjects";
 import { useExhibitImageUpload } from "@/features/exhibits/hooks/useExhibitImageUpload";

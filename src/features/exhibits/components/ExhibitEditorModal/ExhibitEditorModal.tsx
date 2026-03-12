@@ -1,5 +1,5 @@
 // src/features/exhibits/components/ExhibitEditorModal/ExhibitEditorModal.tsx
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { X, Save, Loader2 } from "lucide-react";
 import { clampSlotIndex } from "@/shared/utils/slot";
 import { useUpsertExhibit, useDeleteExhibit } from "@/features/exhibits/hooks";

@@ -1,5 +1,5 @@
 // src/shared/utils/lambdaClient.ts
-import { http } from "@/shared/api/http"; // 既存のaxios/fetchラッパーなど
+//import { http } from "@/shared/api/http"; // 既存のaxios/fetchラッパーなど
 
 type LambdaPayload = {
   image_data?: string; // Base64 (prefixなし)

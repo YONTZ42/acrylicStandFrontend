@@ -46,10 +46,7 @@ export function GalleryDetailTab(props: Props) {
     setSelectedSlotIndex((v) => (v == null ? 0 : v));
   }
 
-  function openEditor() {
-    if (selectedSlotIndex == null) return;
-    setEditorOpen(true);
-  }
+
 
   function closeEditor() {
     setEditorOpen(false);

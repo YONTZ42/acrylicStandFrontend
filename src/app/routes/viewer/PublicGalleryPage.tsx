@@ -7,7 +7,6 @@ import { PlaycanvasExhibits } from "@/features/exhibits/components/playcanvas/Pl
 
 type ExhibitPublic = components["schemas"]["ExhibitPublic"];
 
-type PublicSlot = ExhibitPublic | null;
 
  type PlaycanvasNormalizedSlot = {
    imageOriginalUrl?: string | null;

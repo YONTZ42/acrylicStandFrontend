@@ -1,6 +1,6 @@
 // src/features/exhibits/components/ExhibitEditorModal/tools/ToolManualCut.tsx
-import React, { useRef, useState } from "react";
-import { Eraser, Undo, Redo, Check } from "lucide-react";
+import React, { useRef } from "react";
+import { Undo, Redo, Check } from "lucide-react";
 import { useKonvaDraw } from "@/shared/hooks/useKonvaDraw";
 import { applyEraser } from "@/shared/utils/imageProcessing";
 import { PhotoCutoutStage } from "@/shared/components/PhotoCutoutPanel/PhotoCutoutStage";

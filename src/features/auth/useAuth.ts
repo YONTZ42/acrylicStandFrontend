@@ -1,22 +1,20 @@
 // src/features/auth/useAuth.ts
-import { useCallback, useEffect, useMemo, useState, useRef } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import type { components } from "@/shared/types/fromBackend/schema";
 import {
   issueGuestId,
   fetchMe,
   loginWithPassword,
-  refreshAccessToken,
-  migrateGuestToUser,
+
 } from "@/features/auth/api";
 import {
   readGuestId,
   writeGuestId,
   clearGuestId,
   readAccessToken,
-  readRefreshToken,
   writeTokens,
   clearTokens,
-  readGuestMigrationDone,
+  //readGuestMigrationDone,
   writeGuestMigrationDone,
 } from "@/shared/auth/storage";
 
@@ -43,7 +41,6 @@ export type AuthState = {
 export function useAuth(): AuthState {
   const [user, setUser] = useState<User | null>(null);
   const [guestId, setGuestIdState] = useState<string | null>(null);
-  const [isReady, setIsReady] = useState(false);
   const [status, setStatus] = useState<AuthStatus>("idle");
   const isInitializing = useRef(false);
 
@@ -95,6 +92,7 @@ export function useAuth(): AuthState {
     initialize();
   },[initialize])
   
+  /*
   const tryMigrateGuest = useCallback(async () => {
     // userがいる時だけ移行を試す
     if (!user) return;
@@ -118,6 +116,7 @@ export function useAuth(): AuthState {
       // それ以外は一旦握りつぶし（必要ならtoast/logを足す）
     }
   }, [user]);
+*/
 
   const login = useCallback(async (email: string, password: string) => {
     // SimpleJWTが username/password の場合が多いので email を username に入れている（backend側に合わせる）

@@ -1,7 +1,7 @@
 // src/features/exhibits/components/ExhibitEditorModal/LayerThumbCard.tsx
 import React, { useMemo, useEffect } from "react";
 import type { LayerType } from "@/features/exhibits/hooks/useExhibitEditorStore";
-import { Image as ImageIcon, Plus, Edit2 } from "lucide-react";
+import { Plus, Edit2 } from "lucide-react";
 
 type Props = {
   title: string;
@@ -11,7 +11,7 @@ type Props = {
   onClick: () => void;
 };
 
-export const LayerThumbCard: React.FC<Props> = ({ title, type, blob, url, onClick }) => {
+export const LayerThumbCard: React.FC<Props> = ({ title, blob, url, onClick }) => {
   // BlobのURL生成とクリーンアップ
   const previewUrl = useMemo(() => {
     if (blob) return URL.createObjectURL(blob);

@@ -1,0 +1,19 @@
+@import "tailwindcss";
+
+/* v4では @theme ブロック内で変数を定義するのが一般的ですが、 
+   単純なCSS標準プロパティはそのまま記述してOKです */
+
+:root {
+  color-scheme: dark;
+}
+
+/* 画面いっぱいに広げる設定 */
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+}

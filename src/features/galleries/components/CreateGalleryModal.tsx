@@ -1,8 +1,10 @@
-import  { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { cn } from "@/shared/utils/cn";
 import { useToast } from "@/app/providers/ToastProvider";
 import { useCreateGallery } from "@/features/galleries/hooks";
+import { useExhibitImageUpload } from "@/features/exhibits/hooks/useExhibitImageUpload";
 import type { CreateGalleryReq } from "@/features/galleries/api";
+import { ImageIcon, Loader2 } from "lucide-react";
 
 type Props = {
   open: boolean;
@@ -15,30 +17,50 @@ type Props = {
 export function CreateGalleryModal(props: Props) {
   const toast = useToast();
   const m = useCreateGallery();
+  const { uploadImageAndGetUrl, isUploading } = useExhibitImageUpload();
 
-  const [title, setTitle] = useState(props.defaultTitle ?? "");
+  const[title, setTitle] = useState(props.defaultTitle ?? "");
+  const [coverFile, setCoverFile] = useState<File | null>(null);
+  const [coverPreviewUrl, setCoverPreviewUrl] = useState<string | null>(null);
+  
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (!props.open) return;
-    setTitle(props.defaultTitle ?? "");
-  }, [props.open, props.defaultTitle]);
+    if (!props.open) {
+      setTitle(props.defaultTitle ?? "");
+      setCoverFile(null);
+      setCoverPreviewUrl(null);
+    }
+  },[props.open, props.defaultTitle]);
 
-  const busy = m.isPending;
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setCoverFile(file);
+      setCoverPreviewUrl(URL.createObjectURL(file));
+    }
+  };
+
+  const busy = m.isPending || isUploading;
 
   const canCreate = useMemo(() => {
     return title.trim().length > 0 && !busy;
-  }, [title, busy]);
-
-  const body: CreateGalleryReq = useMemo(() => {
-    // サーバが受け取る想定フィールドのみ（型境界で cast）
-    return {
-      title: title.trim(),
-      isPublic: false,
-    } as unknown as CreateGalleryReq;
-  }, [title]);
+  },[title, busy]);
 
   async function onCreate() {
+    if (!canCreate) return;
     try {
+      let uploadedCoverUrl = "";
+      if (coverFile) {
+        uploadedCoverUrl = await uploadImageAndGetUrl(coverFile);
+      }
+
+      const body: CreateGalleryReq = {
+        title: title.trim(),
+        isPublic: false,
+        coverRenderUrl: uploadedCoverUrl || undefined,
+      } as unknown as CreateGalleryReq;
+
       const created = await m.mutateAsync(body);
       const id = (created as any)?.id as string | undefined;
 
@@ -53,87 +75,101 @@ export function CreateGalleryModal(props: Props) {
   if (!props.open) return null;
 
   return (
-    <div className={cn("fixed inset-0 z-50", props.className)} role="dialog" aria-modal="true">
-      {/* backdrop */}
+    <div className={cn("fixed inset-0 z-50 flex items-center justify-center p-4", props.className)} role="dialog" aria-modal="true">
+      {/* オーバーレイ */}
       <div
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        className="absolute inset-0 bg-brand-text/20 backdrop-blur-sm transition-opacity"
         onClick={() => (busy ? null : props.onClose())}
       />
 
-      {/* panel */}
-      <div className="absolute inset-0 flex items-center justify-center p-4">
-        <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#0b0f19] p-4 shadow-2xl">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <div className="text-base font-semibold text-white">Create gallery</div>
-              <div className="mt-0.5 text-sm text-white/60">
-                Enter a title to create a new gallery.
-              </div>
-            </div>
+      <div className="relative w-full max-w-md rounded-[2rem] border border-brand-border bg-brand-surface p-8 shadow-xl">
+        <div className="mb-8">
+          <h2 className="text-2xl font-extrabold text-brand-text tracking-tight">Create Gallery</h2>
+          <p className="mt-1.5 text-sm font-medium text-brand-text-muted">
+            Set up a new space for your exhibits.
+          </p>
+        </div>
 
-            <button
-              type="button"
+        <div className="space-y-6">
+          {/* Title Input */}
+          <label className="block">
+            <div className="text-xs font-extrabold tracking-wide text-brand-text-muted mb-2 uppercase">Title</div>
+            <input
               className={cn(
-                "rounded-lg bg-white/10 px-3 py-2 text-sm font-semibold text-white/80",
-                "hover:bg-white/15 active:scale-[0.99]",
-                "disabled:opacity-50"
+                "w-full rounded-2xl border border-brand-border-strong bg-brand-bg-soft px-4 py-3.5 text-sm font-bold text-brand-text",
+                "placeholder:text-brand-text-soft focus:outline-none focus:border-brand-primary focus:bg-white transition-all shadow-sm",
+                "disabled:opacity-60"
               )}
-              onClick={props.onClose}
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="e.g. My Acrylic Collection"
               disabled={busy}
-            >
-              Close
-            </button>
-          </div>
+              autoFocus
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && canCreate) onCreate();
+                if (e.key === "Escape") props.onClose();
+              }}
+            />
+          </label>
 
-          <div className="mt-4 space-y-3">
-            <label className="block">
-              <div className="text-xs font-semibold text-white/70">Title</div>
-              <input
-                className={cn(
-                  "mt-1 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm text-white",
-                  "placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-sky-400/40",
-                  "disabled:opacity-60"
-                )}
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="e.g. My Mini Museum"
+          {/* Cover Image Upload */}
+          <div>
+            <div className="text-xs font-extrabold tracking-wide text-brand-text-muted mb-2 uppercase">Cover Image (Optional)</div>
+            <div 
+              className={cn(
+                "relative w-full h-36 rounded-2xl border-2 border-dashed flex flex-col items-center justify-center overflow-hidden transition-all",
+                coverPreviewUrl 
+                  ? "border-brand-border bg-brand-bg-soft" 
+                  : "border-brand-border-strong bg-brand-bg hover:bg-brand-primary-soft hover:border-brand-primary cursor-pointer"
+              )}
+              onClick={() => !coverPreviewUrl && fileInputRef.current?.click()}
+            >
+              {coverPreviewUrl ? (
+                <>
+                  <img src={coverPreviewUrl} alt="Preview" className="w-full h-full object-cover" />
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); setCoverFile(null); setCoverPreviewUrl(null); }}
+                    className="absolute top-3 right-3 bg-brand-surface/90 text-brand-text text-[10px] font-bold px-3 py-1.5 rounded-full shadow-sm hover:bg-brand-surface transition-colors"
+                  >
+                    Remove
+                  </button>
+                </>
+              ) : (
+                <div className="flex flex-col items-center gap-2 text-brand-text-muted">
+                  <ImageIcon size={28} strokeWidth={1.5} className="text-brand-primary" />
+                  <span className="text-xs font-bold">Click to upload cover</span>
+                </div>
+              )}
+              <input 
+                type="file" 
+                ref={fileInputRef}
+                accept="image/png, image/jpeg, image/webp" 
+                className="hidden" 
+                onChange={handleFileChange}
                 disabled={busy}
-                autoFocus
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && canCreate) onCreate();
-                  if (e.key === "Escape") props.onClose();
-                }}
               />
-            </label>
+            </div>
           </div>
+        </div>
 
-          <div className="mt-4 flex items-center justify-end gap-2">
-            <button
-              type="button"
-              className={cn(
-                "rounded-xl bg-white/10 px-3 py-2 text-sm font-semibold text-white/80",
-                "hover:bg-white/15 active:scale-[0.99]",
-                "disabled:opacity-50"
-              )}
-              onClick={props.onClose}
-              disabled={busy}
-            >
-              Cancel
-            </button>
-
-            <button
-              type="button"
-              className={cn(
-                "rounded-xl bg-sky-500/20 px-3 py-2 text-sm font-semibold text-sky-200",
-                "hover:bg-sky-500/25 active:scale-[0.99]",
-                "disabled:opacity-50"
-              )}
-              onClick={onCreate}
-              disabled={!canCreate}
-            >
-              {busy ? "Creating..." : "Create"}
-            </button>
-          </div>
+        <div className="mt-10 flex items-center justify-end gap-3">
+          <button
+            type="button"
+            className="rounded-full bg-brand-bg-soft border border-brand-border px-6 py-2.5 text-sm font-bold text-brand-text hover:bg-brand-border transition-all disabled:opacity-50"
+            onClick={props.onClose}
+            disabled={busy}
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            className="flex items-center gap-2 rounded-full bg-brand-primary px-8 py-2.5 text-sm font-bold text-white hover:bg-brand-primary-hover shadow-md shadow-brand-primary/20 transition-all active:scale-95 disabled:opacity-50 disabled:grayscale"
+            onClick={onCreate}
+            disabled={!canCreate}
+          >
+            {busy ? <Loader2 size={16} className="animate-spin" /> : null}
+            {busy ? "Creating..." : "Create"}
+          </button>
         </div>
       </div>
     </div>

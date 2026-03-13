@@ -1,4 +1,4 @@
-import  { useState } from "react";
+import { useState } from "react";
 import { cn } from "@/shared/utils/cn";
 import { CreateGalleryModal } from "./CreateGalleryModal";
 
@@ -16,9 +16,9 @@ export function CreateGalleryButton(props: Props) {
       <button
         type="button"
         className={cn(
-          "rounded-xl border border-white/10 bg-white/10 px-3 py-2 text-sm font-semibold text-white",
-          "hover:bg-white/15 active:scale-[0.99]",
-          "focus:outline-none focus:ring-2 focus:ring-sky-400/50",
+          "rounded-full bg-brand-primary px-6 py-2.5 text-sm font-extrabold text-white shadow-md shadow-brand-primary/20",
+          "hover:bg-brand-primary-hover active:scale-95 transition-all",
+          "focus:outline-none focus:ring-4 focus:ring-brand-primary-soft",
           props.className
         )}
         onClick={() => setOpen(true)}

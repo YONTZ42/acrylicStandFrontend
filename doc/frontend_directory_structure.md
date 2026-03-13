@@ -77,12 +77,17 @@ frontend/
             SlotGrid.tsx
             SlotCard.tsx
           ExhibitEditorModal/
-            ExhibitEditorButton.tsx
-            ExhibitPublishButton.tsx
             ExhibitEditorModal.tsx
-            ImagePicker.tsx
             TitleDescriptionForm.tsx
-            StylePicker.tsx
+            ExhibitPreview3D.tsx
+            LayerEditorModal.tsx
+            LayerThumbCard.tsx
+            tools/
+              ToolAIGenerate.tsx
+              ToolAutoCut.tsx
+              ToolManualCut.tsx
+              ToolObjectRefine.tsx
+            
           playcanvas/
             app.ts
             camera.ts

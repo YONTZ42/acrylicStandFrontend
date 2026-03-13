@@ -3,39 +3,40 @@ import { Link, useParams } from "react-router-dom";
 import type { components } from "@/shared/types/fromBackend/schema";
 import { cn } from "@/shared/utils/cn";
 import { usePublicGallery } from "@/features/galleries/hooks/usePublicGallery";
-import { PlaycanvasExhibits } from "@/features/exhibits/components/playcanvas/PlaycanvasExhibits";
+import { GalleryDetailPreview3D } from "@/features/exhibits/components/playcanvas/GalleryDetailPreview3D";
 
 type ExhibitPublic = components["schemas"]["ExhibitPublic"];
 
+type PlaycanvasNormalizedSlot = {
+  imageOriginalUrl?: string | null;
+  imageBackgroundUrl?: string | null;
+  imageForegroundUrl?: string | null;
+  title?: string | null;
+  description?: string | null;
+  styleConfig?: any | null; // Preview用に追加
+} | null;
 
- type PlaycanvasNormalizedSlot = {
-   imageOriginalUrl?: string | null;
-   imageBackgroundUrl?: string | null;
-   imageForegroundUrl?: string | null;
-   title?: string | null;
-   description?: string | null;
- } | null;
-
- function normalizePublicSlots(
-   exhibits: readonly ExhibitPublic[] | null | undefined,
- ): PlaycanvasNormalizedSlot[] {
+function normalizePublicSlots(
+  exhibits: readonly ExhibitPublic[] | null | undefined,
+): PlaycanvasNormalizedSlot[] {
   const slots: PlaycanvasNormalizedSlot[] = Array.from({ length: 12 }, () => null);
 
-   for (const ex of exhibits ?? []) {
-     if (typeof ex?.slotIndex !== "number") continue;
-     if (ex.slotIndex < 0 || ex.slotIndex > 11) continue;
+  for (const ex of exhibits ?? []) {
+    if (typeof ex?.slotIndex !== "number") continue;
+    if (ex.slotIndex < 0 || ex.slotIndex > 11) continue;
 
-     slots[ex.slotIndex] = {
-       imageOriginalUrl: ex.imageOriginalUrl ?? null,
-       imageForegroundUrl: ex.imageForegroundUrl ?? null,
-        imageBackgroundUrl: ex.imageBackgroundUrl ?? null,
+    slots[ex.slotIndex] = {
+      imageOriginalUrl: ex.imageOriginalUrl ?? null,
+      imageForegroundUrl: ex.imageForegroundUrl ?? null,
+      imageBackgroundUrl: ex.imageBackgroundUrl ?? null,
       title: ex.title ?? null,
-       description: ex.description ?? null,
-     };
-   }
+      description: ex.description ?? null,
+      styleConfig: ex.styleConfig ?? { depth: 5, foregroundEffect: "none", backgroundEffect: "none" },
+    };
+  }
 
-   return slots;
- }
+  return slots;
+}
 
 function ViewerState(props: {
   title: string;
@@ -47,23 +48,22 @@ function ViewerState(props: {
   return (
     <div className="min-h-screen bg-[#06070a] text-white">
       <div className="mx-auto flex min-h-screen max-w-5xl items-center justify-center p-6">
-        <div className="w-full max-w-lg rounded-3xl border border-white/10 bg-white/5 p-6 shadow-2xl backdrop-blur">
-          <div className="text-xl font-semibold">{props.title}</div>
-          {props.body ? <div className="mt-2 text-sm text-white/65">{props.body}</div> : null}
+        <div className="w-full max-w-lg rounded-3xl border border-white/10 bg-white/5 p-8 text-center shadow-2xl backdrop-blur">
+          <div className="text-xl font-bold">{props.title}</div>
+          {props.body ? <div className="mt-3 text-sm text-white/60">{props.body}</div> : null}
 
           {props.loading ? (
-            <div className="mt-4 h-2 overflow-hidden rounded-full bg-white/10">
-              <div className="h-full w-1/3 animate-pulse rounded-full bg-sky-400/70" />
+            <div className="mt-6 h-1.5 overflow-hidden rounded-full bg-white/10">
+              <div className="h-full w-1/3 animate-pulse rounded-full bg-yellow-400" />
             </div>
           ) : null}
 
           {props.actionHref && props.actionLabel ? (
-            <div className="mt-5">
+            <div className="mt-8">
               <Link
                 to={props.actionHref}
                 className={cn(
-                  "inline-flex rounded-xl bg-white/10 px-4 py-2 text-sm font-semibold text-white/85",
-                  "hover:bg-white/15 active:scale-[0.99]",
+                  "inline-flex rounded-full bg-white/10 px-6 py-2.5 text-sm font-bold text-white hover:bg-white/20 active:scale-[0.99] transition-all",
                 )}
               >
                 {props.actionLabel}
@@ -97,28 +97,17 @@ export function PublicGalleryPage() {
     return (
       <ViewerState
         title="Loading gallery..."
-        body="公開ギャラリーを読み込んでいます。"
+        body="Preparing 3D Exhibition space."
         loading
       />
     );
   }
 
-  if (q.isError) {
-    return (
-      <ViewerState
-        title="Failed to load gallery"
-        body="通信に失敗しました。少し時間をおいて再度お試しください。"
-        actionHref="/"
-        actionLabel="Back to top"
-      />
-    );
-  }
-
-  if (!q.data) {
+  if (q.isError || !q.data) {
     return (
       <ViewerState
         title="Gallery not found"
-        body="この公開ギャラリーは存在しないか、現在は非公開です。"
+        body="この公開ギャラリーは存在しないか、現在は非公開に設定されています。"
         actionHref="/"
         actionLabel="Back to top"
       />
@@ -126,42 +115,37 @@ export function PublicGalleryPage() {
   }
 
   const gallery = q.data;
-  console.log("public galleru", gallery);
   const normalizedSlots = normalizePublicSlots(gallery.exhibits);
 
   return (
-    <div className="min-h-screen bg-[#06070a] text-white">
-      <div className="border-b border-white/10 bg-black/20 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 md:px-6">
-          <div className="min-w-0">
-            <div className="truncate text-lg font-semibold">
-              {gallery.title?.trim() || "Public Gallery"}
-            </div>
-            <div className="mt-1 truncate text-xs text-white/55">slug: {gallery.slug}</div>
+    <div className="min-h-screen flex flex-col bg-[#050505] text-white">
+      {/* Header */}
+      <div className="relative z-10 border-b border-white/5 bg-black/40 backdrop-blur-md">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 md:px-6">
+          <div className="min-w-0 flex items-center gap-4">
+             {gallery.coverRenderUrl && (
+                <img src={gallery.coverRenderUrl} alt="Cover" className="w-10 h-10 rounded-lg object-cover border border-white/10 hidden sm:block" />
+             )}
+             <div>
+                <div className="truncate text-base font-bold text-white">
+                  {gallery.title?.trim() || "Public Gallery"}
+                </div>
+                <div className="mt-0.5 truncate text-[10px] uppercase tracking-wider text-white/40">ID: {gallery.slug}</div>
+             </div>
           </div>
 
           <Link
             to="/"
-            className={cn(
-              "shrink-0 rounded-xl bg-white/10 px-3 py-2 text-sm font-semibold text-white/80",
-              "hover:bg-white/15 active:scale-[0.99]",
-            )}
+            className="shrink-0 rounded-full bg-yellow-400 px-4 py-1.5 text-xs font-bold text-black hover:bg-yellow-300 transition-colors"
           >
-            Top
+            Create Your Own
           </Link>
         </div>
       </div>
 
-      <div className="mx-auto max-w-7xl px-4 py-6 md:px-6">
-        <div className="mb-4 rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
-          <div className="text-sm text-white/65">
-            Public view. 編集UIは表示せず、公開中の展示のみを閲覧できます。
-          </div>
-        </div>
-
-        <div className="overflow-hidden rounded-3xl border border-white/10 bg-black/20 shadow-2xl">
-          <PlaycanvasExhibits normalizedSlots={normalizedSlots} />
-        </div>
+      {/* Main 3D View */}
+      <div className="flex-1 relative w-full h-full bg-black/80">
+         <GalleryDetailPreview3D slots={normalizedSlots} />
       </div>
     </div>
   );

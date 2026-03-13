@@ -1,88 +1,109 @@
 // src/app/routes/marketing/LandingPage.tsx
-import { cn } from "@/shared/utils/cn";
+import { Link } from "react-router-dom";
 import { useLpExhibitStartFlow } from "@/app/routes/marketing/hooks/useLpExhibitStartFlow";
+import { ImageUploadCTA } from "@/app/routes/marketing/components/ImageUploadCTA";
 
 export function LandingPage() {
   const { 
-    startFlow, 
-    showPicker, 
-    setShowPicker, 
-    isLoading,
-    error,
     status,
+    error,
+    isLoading,
+    previewUrl,
+    handleImageSelect,
+    clearSelection,
+    finalizeExhibition,
   } = useLpExhibitStartFlow();
 
   const isAuth = status === "authenticated";
 
   return (
-    
-    <div className="relative min-h-screen bg-[#080808] text-white flex flex-col items-center justify-center p-6">
-      {/* ヒーローセクション */}
-      <div className="max-w-2xl text-center space-y-8">
-        <h1 className="text-5xl md:text-7xl font-light tracking-tighter">
-          Digital <br />
-          <span className="italic font-serif">Miniature</span> Museum
-        </h1>
+    <div className="relative min-h-screen bg-brand-bg text-brand-text overflow-hidden font-sans selection:bg-brand-primary-soft selection:text-brand-primary flex flex-col">
+      
+      {/* エモいオーラ背景（推しカラーグラデーション） */}
+      <div className="fixed top-[-20%] left-[-10%] w-[70vw] h-[70vw] bg-brand-primary/15 rounded-full blur-[120px] mix-blend-multiply opacity-80 pointer-events-none animate-pulse-slow" />
+      <div className="fixed bottom-[-10%] right-[-10%] w-[80vw] h-[80vw] bg-brand-accent/10 rounded-full blur-[150px] mix-blend-multiply opacity-70 pointer-events-none" />
+
+      {/* ヘッダー */}
+      <header className="relative w-full p-6 flex justify-between items-center z-50">
+        <div className="text-xl font-bold tracking-tight text-brand-text flex items-center gap-2">
+          <span className="w-3 h-3 rounded-full bg-brand-primary animate-pulse"></span>
+          Miniature Museum
+        </div>
         
-        <p className="text-white/60 text-lg font-light leading-relaxed">
-          大切な一枚を、ガラスの中に封じ込める。 <br />
-          あなただけの静かな展示空間を、今すぐここに。
-        </p>
+        <div className="flex gap-4">
+          {isAuth ? (
+            <Link 
+              to="/app/galleries"
+              className="px-6 py-2.5 rounded-full text-sm font-bold bg-brand-surface/80 backdrop-blur-md border border-brand-border text-brand-primary hover:bg-brand-primary-soft transition-colors shadow-sm"
+            >
+              マイルームへ
+            </Link>
+          ) : (
+            <Link 
+              to="/login"
+              className="px-6 py-2.5 rounded-full text-sm font-bold bg-white/50 backdrop-blur-md border border-brand-border text-brand-text hover:bg-white/80 transition-colors shadow-sm"
+            >
+              ログイン
+            </Link>
+          )}
+        </div>
+      </header>
+
+      {/* メインコンテンツ（中央配置） */}
+      <main className="relative z-10 flex-1 flex flex-col items-center justify-center px-6 pb-20 w-full max-w-3xl mx-auto">
+        
+        <div className="text-center space-y-6 mb-12 animate-fade-in-up">
+          <h2 className="text-brand-accent font-bold tracking-[0.2em] text-sm uppercase">
+            Digital Oshi Stand
+          </h2>
+          <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold leading-[1.2] tracking-tight">
+            デジタル空間に、<br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-primary to-brand-accent">
+              あなただけの祭壇
+            </span>を。
+          </h1>
+          <p className="text-brand-text-muted text-base md:text-lg leading-relaxed max-w-xl mx-auto font-medium">
+            お気に入りの一枚をアップロードするだけ。<br />
+            スマホの中に、光と影が美しい3Dのアクリルスタンドを飾りましょう。<br />
+            いつでも推しに会える、静かで尊い空間へ。
+          </p>
+        </div>
 
         {error && (
-          <p className="mt-4 text-red-400 text-xs font-light">{error}</p>
+          <div className="mb-6 text-brand-secondary text-sm font-bold bg-brand-secondary/10 py-3 px-6 rounded-xl animate-fade-in-up">
+            {error}
+          </div>
         )}
-        {/* メインアクション */}
-        <div className="pt-10">
-          <button
-            onClick={startFlow}
-            disabled={isLoading}
-            className={cn(
-              "px-10 py-4 rounded-full border border-white/20 bg-white/5 hover:bg-white/10 transition-all duration-500",
-              "text-sm tracking-[0.2em] uppercase",
-              isLoading && "opacity-50 cursor-not-allowed"
-            )}
-          >
-            {isLoading ? "Preparing Room..." : isAuth ? "Enter Your Museum" : "Create Your First Exhibit"}
-          </button>
+
+        {/* アクスタ作成CTAエリア */}
+        <div className="w-full animate-fade-in-up" style={{ animationDelay: "0.1s" }}>
+          <ImageUploadCTA 
+            previewUrl={previewUrl}
+            isLoading={isLoading}
+            onImageSelect={handleImageSelect}
+            onClear={clearSelection}
+            onSubmit={finalizeExhibition}
+          />
         </div>
-      </div>
 
-      {/* ImagePicker モーダル (Guest用) */}
-      {showPicker && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-4">
-          <div className="w-full max-w-md space-y-6">
-            <div className="flex justify-between items-end">
-              <div>
-                <h2 className="text-xl font-light">Select an Image</h2>
-                <p className="text-xs text-white/40 mt-1">この画像が最初の展示物になります</p>
-              </div>
-              <button 
-                onClick={() => setShowPicker(false)}
-                className="text-xs uppercase tracking-widest text-white/60 hover:text-white"
-              >
-                Close
-              </button>
-            </div>
+      </main>
 
-          </div>
-        </div>
-      )}
-
-      {/* ローディングオーバーレイ */}
-      {isLoading && (
-        <div className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm flex flex-col items-center justify-center space-y-4">
-          <div className="w-12 h-px bg-white/20 overflow-hidden">
-            <div className="w-full h-full bg-white animate-[loading_1.5s_infinite]" />
-          </div>
-          <p className="text-[10px] uppercase tracking-[0.3em] text-white/40">Curating your space</p>
-        </div>
-      )}
-
+      {/* カスタムアニメーション */}
       <style>{`
-        @keyframes loading {
-          0% { transform: translateX(-100%); }
-          100% { transform: translateX(100%); }
+        .animate-fade-in-up { 
+          animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) both; 
+        }
+        .animate-pulse-slow { 
+          animation: pulseOpacity 8s ease-in-out infinite; 
+        }
+        
+        @keyframes fadeInUp {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes pulseOpacity {
+          0%, 100% { opacity: 0.5; }
+          50% { opacity: 0.9; }
         }
       `}</style>
     </div>

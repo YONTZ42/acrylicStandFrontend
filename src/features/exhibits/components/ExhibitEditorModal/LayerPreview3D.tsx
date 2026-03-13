@@ -8,6 +8,7 @@ type Props = {
 previewSrc: string;
 };
 export const LayerPreview3D: React.FC<Props> = ({ previewSrc }) => {
+
 const canvasRef = useRef<HTMLCanvasElement>(null);
 const appRef = useRef<pc.Application | null>(null);
 const [isGenerating, setIsGenerating] = useState(false);

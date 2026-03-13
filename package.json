@@ -17,7 +17,6 @@
     "konva": "^10.2.0",
     "lucide-react": "^0.575.0",
     "playcanvas": "^2.16.1",
-    "reacct": "^0.0.1-security",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-konva": "^19.2.2",

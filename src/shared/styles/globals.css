@@ -1,5 +1,5 @@
 @import "tailwindcss";
-
+@config "../../../tailwind.config.js";
 /* v4では @theme ブロック内で変数を定義するのが一般的ですが、 
    単純なCSS標準プロパティはそのまま記述してOKです */
 

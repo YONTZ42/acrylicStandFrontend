@@ -29,7 +29,7 @@ export function GallerySettingsModal(props: Props) {
 
     setTitle((g.title ?? "").toString());
     setIsPublic(!!g.isPublic);
-  }, [props.open, g?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  },[props.open, g?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const busy = detail.isLoading || update.isPending || del.isPending;
 
@@ -90,155 +90,127 @@ export function GallerySettingsModal(props: Props) {
   if (!props.open) return null;
 
   return (
-    <div className={cn("fixed inset-0 z-50", props.className)} role="dialog" aria-modal="true">
+    <div className={cn("fixed inset-0 z-50 flex items-center justify-center p-4", props.className)} role="dialog" aria-modal="true">
       <div
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        className="absolute inset-0 bg-brand-text/20 backdrop-blur-sm transition-opacity"
         onClick={() => (busy ? null : props.onClose())}
       />
 
-      <div className="absolute inset-0 flex items-center justify-center p-4">
-        <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#0b0f19] p-4 shadow-2xl">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <div className="text-base font-semibold text-white">Gallery settings</div>
-              <div className="mt-0.5 text-sm text-white/60">
-                {detail.isLoading ? "Loading..." : g ? `slug: ${g.slug}` : "Not found"}
-              </div>
-            </div>
-
+      <div className="relative w-full max-w-md rounded-[2rem] border border-brand-border bg-brand-surface p-8 shadow-xl">
+        <div className="flex flex-col mb-8 gap-2">
+          <div className="flex items-start justify-between">
+            <h2 className="text-2xl font-extrabold text-brand-text tracking-tight">Gallery Settings</h2>
             <button
               type="button"
-              className={cn(
-                "rounded-lg bg-white/10 px-3 py-2 text-sm font-semibold text-white/80",
-                "hover:bg-white/15 active:scale-[0.99]",
-                "disabled:opacity-50",
-              )}
+              className="rounded-full bg-brand-bg-soft px-4 py-2 text-sm font-bold text-brand-text hover:bg-brand-border transition-all active:scale-95 disabled:opacity-50"
               onClick={props.onClose}
               disabled={busy}
             >
               Close
             </button>
           </div>
-
-          <div className="mt-4 space-y-3">
-            <label className="block">
-              <div className="text-xs font-semibold text-white/70">Title</div>
-              <input
-                className={cn(
-                  "mt-1 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm text-white",
-                  "placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-sky-400/40",
-                  "disabled:opacity-60",
-                )}
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="Gallery title"
-                disabled={busy || !g}
-              />
-            </label>
-
-            <label className="flex items-center justify-between rounded-xl border border-white/10 bg-black/20 px-3 py-2">
-              <div>
-                <div className="text-sm font-semibold text-white">Public</div>
-                <div className="text-xs text-white/60">Anyone with the link can view</div>
-              </div>
-
-              <input
-                type="checkbox"
-                className="h-5 w-5 accent-sky-400"
-                checked={isPublic}
-                onChange={(e) => setIsPublic(e.target.checked)}
-                disabled={busy || !g}
-              />
-            </label>
-
-            {isPublic && g?.slug ? (
-              <div className="rounded-xl border border-sky-400/20 bg-sky-400/5 p-3">
-                <div className="text-xs font-semibold text-sky-200">Public URL</div>
-                <div className="mt-1 break-all text-sm text-white/80">{publicUrl}</div>
-
-                <div className="mt-2 flex items-center gap-2">
-                  <button
-                    type="button"
-                    className={cn(
-                      "rounded-lg bg-sky-500/20 px-3 py-2 text-xs font-semibold text-sky-200",
-                      "hover:bg-sky-500/25 active:scale-[0.99]",
-                    )}
-                    onClick={onCopyPublicUrl}
-                  >
-                    Copy URL
-                  </button>
-
-                  <a
-                    href={publicUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className={cn(
-                      "rounded-lg bg-white/10 px-3 py-2 text-xs font-semibold text-white/80",
-                      "hover:bg-white/15 active:scale-[0.99]",
-                    )}
-                  >
-                    Open
-                  </a>
-                </div>
-
-                {!g.isPublic ? (
-                  <div className="mt-2 text-xs text-white/50">
-                    SaveするとこのURLで公開されます。
-                  </div>
-                ) : null}
-              </div>
-            ) : null}
+          <div className="inline-flex self-start items-center text-xs font-bold text-brand-text-muted bg-brand-bg-soft px-3 py-1 rounded-full border border-brand-border-strong">
+            {detail.isLoading ? "Loading..." : g ? `slug: ${g.slug}` : "Not found"}
           </div>
+        </div>
 
-          <div className="mt-4 flex items-center justify-between gap-2">
-            <button
-              type="button"
+        <div className="space-y-6">
+          <label className="block">
+            <div className="text-xs font-extrabold tracking-wide text-brand-text-muted mb-2 uppercase">Title</div>
+            <input
               className={cn(
-                "rounded-xl bg-rose-500/15 px-3 py-2 text-sm font-semibold text-rose-200",
-                "hover:bg-rose-500/20 active:scale-[0.99]",
-                "disabled:opacity-50",
+                "w-full rounded-2xl border border-brand-border-strong bg-brand-bg-soft px-4 py-3.5 text-sm font-bold text-brand-text",
+                "placeholder:text-brand-text-soft focus:outline-none focus:border-brand-primary focus:bg-white transition-all shadow-sm",
+                "disabled:opacity-60",
               )}
-              onClick={onDelete}
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Gallery title"
               disabled={busy || !g}
-            >
-              Delete
-            </button>
+            />
+          </label>
 
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                className={cn(
-                  "rounded-xl bg-white/10 px-3 py-2 text-sm font-semibold text-white/80",
-                  "hover:bg-white/15 active:scale-[0.99]",
-                  "disabled:opacity-50",
-                )}
-                onClick={props.onClose}
-                disabled={busy}
-              >
-                Cancel
-              </button>
-
-              <button
-                type="button"
-                className={cn(
-                  "rounded-xl bg-sky-500/20 px-3 py-2 text-sm font-semibold text-sky-200",
-                  "hover:bg-sky-500/25 active:scale-[0.99]",
-                  "disabled:opacity-50",
-                )}
-                onClick={onSave}
-                disabled={!canSave}
-              >
-                {update.isPending ? "Saving..." : "Save"}
-              </button>
+          <label className="flex items-center justify-between rounded-2xl border border-brand-border-strong bg-brand-bg-soft px-5 py-4 cursor-pointer hover:bg-white transition-colors">
+            <div>
+              <div className="text-sm font-extrabold text-brand-text">Public</div>
+              <div className="text-xs font-medium text-brand-text-muted mt-0.5">Anyone with the link can view</div>
             </div>
-          </div>
+            <input
+              type="checkbox"
+              className="h-5 w-5 accent-brand-primary cursor-pointer"
+              checked={isPublic}
+              onChange={(e) => setIsPublic(e.target.checked)}
+              disabled={busy || !g}
+            />
+          </label>
 
-          {detail.isError ? (
-            <div className="mt-3 rounded-xl border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-sm text-rose-100">
-              Failed to load gallery.
+          {isPublic && g?.slug ? (
+            <div className="rounded-2xl border border-brand-primary/20 bg-brand-primary-soft p-5 shadow-sm">
+              <div className="text-xs font-extrabold text-brand-primary uppercase tracking-wide">Public URL</div>
+              <div className="mt-1.5 break-all text-sm font-bold text-brand-text">{publicUrl}</div>
+
+              <div className="mt-4 flex items-center gap-3">
+                <button
+                  type="button"
+                  className="rounded-full bg-brand-primary px-5 py-2 text-xs font-bold text-white shadow-sm hover:bg-brand-primary-hover active:scale-95 transition-all"
+                  onClick={onCopyPublicUrl}
+                >
+                  Copy URL
+                </button>
+                <a
+                  href={publicUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="rounded-full bg-white border border-brand-primary/20 px-5 py-2 text-xs font-bold text-brand-primary hover:bg-brand-bg-soft active:scale-95 transition-all"
+                >
+                  Open
+                </a>
+              </div>
+
+              {!g.isPublic ? (
+                <div className="mt-4 text-xs font-bold text-brand-text-muted bg-white/50 px-3 py-2 rounded-xl border border-brand-primary/10">
+                  SaveするとこのURLで公開されます。
+                </div>
+              ) : null}
             </div>
           ) : null}
         </div>
+
+        <div className="mt-8 pt-6 border-t border-brand-border flex items-center justify-between gap-2">
+          <button
+            type="button"
+            className="rounded-full bg-brand-secondary/10 px-5 py-2.5 text-sm font-bold text-brand-secondary hover:bg-brand-secondary/20 active:scale-95 transition-all disabled:opacity-50"
+            onClick={onDelete}
+            disabled={busy || !g}
+          >
+            Delete
+          </button>
+
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              className="rounded-full bg-brand-bg-soft border border-brand-border px-5 py-2.5 text-sm font-bold text-brand-text hover:bg-brand-border active:scale-95 transition-all disabled:opacity-50"
+              onClick={props.onClose}
+              disabled={busy}
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              className="rounded-full bg-brand-primary px-8 py-2.5 text-sm font-bold text-white shadow-md shadow-brand-primary/20 hover:bg-brand-primary-hover active:scale-95 transition-all disabled:opacity-50 disabled:grayscale"
+              onClick={onSave}
+              disabled={!canSave}
+            >
+              {update.isPending ? "Saving..." : "Save"}
+            </button>
+          </div>
+        </div>
+
+        {detail.isError ? (
+          <div className="mt-4 rounded-xl border border-brand-secondary/30 bg-brand-secondary/10 px-4 py-3 text-sm font-bold text-brand-secondary">
+            Failed to load gallery.
+          </div>
+        ) : null}
       </div>
     </div>
   );

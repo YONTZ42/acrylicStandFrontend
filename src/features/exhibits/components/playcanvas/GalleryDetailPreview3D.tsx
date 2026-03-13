@@ -353,7 +353,11 @@ const GalleryDetailPreview3DInner: React.FC<{ slots: any[] }> = ({ slots }) => {
       
       slotGroup.setLocalPosition(xPos, yPos, 0);
 
-      const style = exhibit.styleConfig || { depth: 5, foregroundEffect: "none", backgroundEffect: "none" };
+      const style = {
+        depth: exhibit.styleConfig?.depth ?? 5,
+        foregroundEffect: exhibit.styleConfig?.foregroundEffect ?? "none",
+        backgroundEffect: exhibit.styleConfig?.backgroundEffect ?? "none",
+      };
       const depthScale = 0.15;
       const offsetZ = (style.depth * depthScale) / 2;
 

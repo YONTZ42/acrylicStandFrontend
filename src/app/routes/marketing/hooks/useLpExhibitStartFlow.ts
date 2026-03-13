@@ -61,6 +61,12 @@ export function useLpExhibitStartFlow() {
         imageOriginalUrl:uploadedUrl,
         imageForegroundUrl: uploadedUrl, // 透過済み/前景用画像として保存
         imageBackgroundUrl: "",
+        styleConfig: {                   // ★ 追加: 必須のスタイル初期値をセット
+          depth: 5, 
+          foregroundEffect: "none", 
+          backgroundEffect: "none"
+        },
+
       });
 
       // 6. 新しいルーティング設計に従い、GalleryWorkspacePageへ遷移

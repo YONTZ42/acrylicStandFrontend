@@ -9,7 +9,9 @@ declare global {
         id: {
           initialize: (config: {
             client_id: string;
-            callback: (response: { credential?: string }) => void;
+            ux_mode?: "popup" | "redirect";
+            login_uri?:string;
+            callback?: (response: { credential?: string }) => void;
           }) => void;
           renderButton: (
             parent: HTMLElement,
@@ -51,7 +53,10 @@ export function LoginPage() {
 
     window.google.accounts.id.initialize({
       client_id: clientId,
-      callback: async (response) => {
+      /*ux_mode: "redirect",
+      login_uri: "http://localhost:5173/app/galleries",
+      */
+     callback: async (response) => {
         const idToken = response.credential;
         if (!idToken) {
           setErr("Google認証に失敗しました");

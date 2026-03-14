@@ -17,5 +17,16 @@
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script src="https://unpkg.com/vconsole@latest/dist/vconsole.min.js"></script>
+    <script>
+      // 画面が読み込まれたら vConsole を初期化する
+      window.addEventListener('load', function() {
+        // オプション設定（任意）
+        var vConsole = new window.VConsole({
+          theme: 'dark' // ダークモード
+        });
+        console.log('vConsole initialized');
+      });
+    </script>
   </body>
 </html>

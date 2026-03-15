@@ -20,7 +20,7 @@ type ImageUrlResponse = {
 };
 
 // --- Constants ---
-const SIZE_THRESHOLD = 4.5 * 1024 * 1024; // 4.5MB
+const SIZE_THRESHOLD = 1 * 1024 * 1024; // 4.5MB
 
 // --- Helpers ---
 

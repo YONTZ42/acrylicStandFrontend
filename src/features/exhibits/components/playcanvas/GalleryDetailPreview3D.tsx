@@ -35,6 +35,7 @@ const GalleryDetailPreview3DInner: React.FC<{ slots: any[] }> = ({ slots }) => {
 
   const galleryGroupRef = useRef<pc.Entity | null>(null);
   const cameraRef = useRef<pc.Entity | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   // --- カメラ操作ステート ---
   const isDragging = useRef(false);   // 回転(オービット)
@@ -53,13 +54,89 @@ const GalleryDetailPreview3DInner: React.FC<{ slots: any[] }> = ({ slots }) => {
   const targetPan = useRef({ x: 0, y: 0 });
   const currentPan = useRef({ x: 0, y: 0 });
 
+
+
+  // --- ブラウザのデフォルトタッチ挙動（スクロール・ズーム等）を強制ブロック ---
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const preventDefault = (e: TouchEvent | WheelEvent) => {
+      if (e.cancelable) e.preventDefault();
+
+    };
+    // ------------------------------------------------------------------------
+    // 生のDOMイベントでタッチ操作を直接処理する (ラグをなくすため)
+    // ------------------------------------------------------------------------
+    const handleTouchStart = (e: TouchEvent) => {
+      if (e.cancelable) e.preventDefault();
+      if (e.touches.length === 1) {
+        isDragging.current = true;
+        lastMouseX.current = e.touches[0].clientX;
+      } else if (e.touches.length === 2) {
+        isDragging.current = false;
+        isPanning.current = true;
+        const cx = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+        const cy = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+        lastMousePos.current = { x: cx, y: cy };
+        
+        const dx = e.touches[0].clientX - e.touches[1].clientX;
+        const dy = e.touches[0].clientY - e.touches[1].clientY;
+        lastPinchDist.current = Math.sqrt(dx * dx + dy * dy);
+      }
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (e.cancelable) e.preventDefault();
+      if (e.touches.length === 1 && isDragging.current) {
+        targetRotation.current += (e.touches[0].clientX - lastMouseX.current) * 0.3;
+        lastMouseX.current = e.touches[0].clientX;
+      } else if (e.touches.length === 2) {
+        // パン処理
+        const cx = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+        const cy = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+        const panSpeed = currentZoom.current * 0.0015;
+        targetPan.current.x -= (cx - lastMousePos.current.x) * panSpeed;
+        targetPan.current.y += (cy - lastMousePos.current.y) * panSpeed;
+        lastMousePos.current = { x: cx, y: cy };
+
+        // ズーム処理
+        const dx = e.touches[0].clientX - e.touches[1].clientX;
+        const dy = e.touches[0].clientY - e.touches[1].clientY;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        targetZoom.current += (lastPinchDist.current - dist) * 0.1;
+        targetZoom.current = pc.math.clamp(targetZoom.current, 15, 120);
+        lastPinchDist.current = dist;
+      }
+    };
+
+    const handleTouchEnd = () => {
+      isDragging.current = false;
+      isPanning.current = false;
+     };
+
+    container.addEventListener("touchstart", handleTouchStart, { passive: false });
+    container.addEventListener("touchmove", handleTouchMove, { passive: false });
+    container.addEventListener("touchend", handleTouchEnd, { passive: false });
+    container.addEventListener("touchcancel", handleTouchEnd, { passive: false });
+    container.addEventListener("wheel", preventDefault, { passive: false });
+
+    return () => {
+      container.removeEventListener("touchstart", handleTouchStart);
+      container.removeEventListener("touchmove", handleTouchMove);
+      container.removeEventListener("touchend", handleTouchEnd);
+      container.removeEventListener("touchcancel", handleTouchEnd);
+       container.removeEventListener("wheel", preventDefault);
+    };
+  }, []);
+
+
   // 1. アプリケーション初期化
   useEffect(() => {
     if (!canvasRef.current) return;
 
     const app = new pc.Application(canvasRef.current, {
       mouse: new pc.Mouse(canvasRef.current),
-      touch: new pc.TouchDevice(canvasRef.current),
       elementInput: new pc.ElementInput(canvasRef.current),
     });
     app.start();
@@ -76,7 +153,7 @@ const GalleryDetailPreview3DInner: React.FC<{ slots: any[] }> = ({ slots }) => {
     camera.addComponent("camera", {
       clearColor: new pc.Color(0.05, 0.05, 0.06, 1),
       projection: pc.PROJECTION_PERSPECTIVE,
-      fov: 30,
+      fov: 90,
     });
     camera.setPosition(currentPan.current.x, currentPan.current.y, targetZoom.current);
     app.root.addChild(camera);
@@ -158,56 +235,6 @@ const GalleryDetailPreview3DInner: React.FC<{ slots: any[] }> = ({ slots }) => {
     app.mouse?.on(pc.EVENT_MOUSEWHEEL, (e) => {
       targetZoom.current -= e.wheelDelta * 2;
       targetZoom.current = pc.math.clamp(targetZoom.current, 15, 120);
-    });
-
-    // --- 入力イベント (タッチ) ---
-    app.touch?.on(pc.EVENT_TOUCHSTART, (e) => {
-      if (e.touches.length === 1) {
-        isDragging.current = true;
-        lastMouseX.current = e.touches[0].x;
-      } else if (e.touches.length === 2) {
-        isDragging.current = false;
-        isPanning.current = true;
-        const cx = (e.touches[0].x + e.touches[1].x) / 2;
-        const cy = (e.touches[0].y + e.touches[1].y) / 2;
-        lastMousePos.current = { x: cx, y: cy };
-        
-        const dx = e.touches[0].x - e.touches[1].x;
-        const dy = e.touches[0].y - e.touches[1].y;
-        lastPinchDist.current = Math.sqrt(dx * dx + dy * dy);
-      }
-    });
-
-    app.touch?.on(pc.EVENT_TOUCHMOVE, (e) => {
-      if (e.touches.length === 1 && isDragging.current) {
-        targetRotation.current += (e.touches[0].x - lastMouseX.current) * 0.3;
-        lastMouseX.current = e.touches[0].x;
-      } else if (e.touches.length === 2) {
-        // パン
-        const cx = (e.touches[0].x + e.touches[1].x) / 2;
-        const cy = (e.touches[0].y + e.touches[1].y) / 2;
-        const panSpeed = currentZoom.current * 0.0015;
-        targetPan.current.x -= (cx - lastMousePos.current.x) * panSpeed;
-        targetPan.current.y += (cy - lastMousePos.current.y) * panSpeed;
-        lastMousePos.current = { x: cx, y: cy };
-
-        // ズーム
-        const dx = e.touches[0].x - e.touches[1].x;
-        const dy = e.touches[0].y - e.touches[1].y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        targetZoom.current += (lastPinchDist.current - dist) * 0.1;
-        targetZoom.current = pc.math.clamp(targetZoom.current, 15, 120);
-        lastPinchDist.current = dist;
-      }
-    });
-
-    app.touch?.on(pc.EVENT_TOUCHEND, () => {
-      isDragging.current = false;
-      isPanning.current = false;
-    });
-    app.touch?.on(pc.EVENT_TOUCHCANCEL, () => {
-      isDragging.current = false;
-      isPanning.current = false;
     });
 
     // --- フレーム更新 ---
@@ -403,12 +430,15 @@ const GalleryDetailPreview3DInner: React.FC<{ slots: any[] }> = ({ slots }) => {
   }, [slots]);
 
   return (
-    <div className="w-full h-full relative cursor-grab active:cursor-grabbing">
+    <div 
+      ref={containerRef}
+      className="w-full h-full relative cursor-grab active:cursor-grabbing touch-none select-none overflow-hidden"
+    >
       {/* onContextMenu を preventDefault し、右クリックメニューを出させない */}
       <canvas 
         ref={canvasRef} 
-        className="w-full h-full block touch-none" 
-        style={{ outline: "none" }} 
+        className="w-full h-full block touch-none " 
+        style={{ outline: "none" , WebkitUserSelect: "none"}} 
         onContextMenu={(e) => e.preventDefault()}
       />
       

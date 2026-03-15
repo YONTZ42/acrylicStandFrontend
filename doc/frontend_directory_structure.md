@@ -1,41 +1,62 @@
 frontend/
   index.html
   package.json
+  package-lock.json
   vite.config.ts
   tailwind.config.js
   postcss.config.js
+  tsconfig.app.json
+  tsconfig.json
+  tsconfig.node.json
+  eslint.config.js
+  
   public/
     favicon.svg
     ogp.png
-  src/
-    main.tsx
+src/
+  app/
+    AppRouter.tsx
 
-    app/
-      AppRouter.tsx              # react-router 定義（/ /login /app /g/:slug）
-      providers/
-        QueryProvider.tsx        # TanStack Query
-        ToastProvider.tsx
-        AuthProvider.tsx         #/features/auth/AuthProvider.tsx のラッパー
-      layouts/
-        RootLayout.tsx           # 最上位（<Outlet/>）
-        MarketingLayout.tsx      # LP用
-        AppShellLayout.tsx       # /app 用（Header/Tab/Footer）
-        ViewerLayout.tsx         # /g/:slug 用（必要なら）
-      routes/
-        marketing/
-          LandingPage.tsx
+    providers/
+      AuthProvider.tsx
+      QueryProvider.tsx
+      ToastProvider.tsx
+
+    layouts/
+      RootLayout.tsx
+      MarketingLayout.tsx
+      ViewerLayout.tsx
+      AppShellLayout.tsx
+      AppHeader.tsx
+      AppBottomTabs.tsx
+
+    routes/
+      marketing/
+        LandingPage.tsx
         hooks/
           useLpExhibitStartFlow.ts
-        auth/
-          LoginPage.tsx
-          RegisterPage.tsx
-        app/
-          AppHome.tsx            # /app の枠（2タブの親）
-          tabs/
-            GalleryLibraryTab.tsx
-            GalleryDetailTab.tsx
-        viewer/
-          PublicGalleryPage.tsx  # /g/:slug（閲覧）
+        components/
+          ImageUploadCTA.tsx
+
+      auth/
+        LoginPage.tsx
+        RegisterPage.tsx
+
+      viewer/
+        PublicGalleryPage.tsx
+
+      app/
+        galleries/
+          GalleriesPage.tsx
+          GalleryWorkspacePage.tsx
+
+        studio/
+          StudioPage.tsx
+          components/
+            StudioExhibitEditor.tsx
+
+      misc/
+        NotFoundPage.tsx
 
     features/
       auth/

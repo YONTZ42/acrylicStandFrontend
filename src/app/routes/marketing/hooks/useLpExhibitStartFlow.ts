@@ -57,7 +57,7 @@ export function useLpExhibitStartFlow() {
       // 5. アクスタ(Exhibit)の作成 (指定スロットへの PUT upsert)
       await http.put(`/api/galleries/${targetId}/exhibits/${nextSlotIndex}/`, {
         slotIndex: nextSlotIndex,
-        title: "尊い概念",
+        title: "初アクスタ！",
         imageOriginalUrl:uploadedUrl,
         imageForegroundUrl: uploadedUrl, // 透過済み/前景用画像として保存
         imageBackgroundUrl: "",

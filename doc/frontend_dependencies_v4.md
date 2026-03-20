@@ -92,8 +92,6 @@
   - `useDeleteGallery()`（成功後、stateから完全削除＝削除済みは存在しない前提）
 
 #### `features/galleries/components/*`
-- `CreateGalleryButton`：hook を呼ぶだけ（分岐は持たない）
-- `CreateGalleryModal`：必要なら title 入力（ただし Guest は “既存返却” があるので UX に注意）
 
 ---
 
@@ -117,9 +115,6 @@
 ### `src/main.tsx`
 - Provider を積む（QueryProvider / AuthProvider / ToastProvider）
 
-### `src/app/routes/app/tabs/*`
-- `GalleryLibraryTab`：一覧表示（分岐なし。useGalleriesList を呼ぶだけ）
-- `GalleryDetailTab`：詳細 + WebGPU（分岐なし。useGalleryDetail を呼ぶだけ）
 
 ---
 

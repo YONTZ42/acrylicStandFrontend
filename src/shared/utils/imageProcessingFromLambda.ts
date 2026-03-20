@@ -64,7 +64,7 @@ async function buildImagePayload(
     // lambdaClient側でプレフィックス除去するためそのまま渡す
     return { image_data: b64 };
   }
-}
+} 
 
 /**
  * Rembgによる背景削除

@@ -628,24 +628,6 @@ MVP では URL/ダミー入力を扱う前提。
 
 ---
 
-### `src/features/exhibits/components/ImagePicker.tsx`（変更）
-**責務**: 画像URL入力ではなく「画像プレビュー領域」として振る舞う。  
-プレビュー領域タップで `PhotoCutoutPanel` を開き、編集後に upload → URL取得 → プレビュー更新。
-
-- **props（想定）**
-  - `value: string | null`（= 画像URL）
-  - `onChange: (next: string | null) => void`
-  - `hiddenName?: string`（フォーム連携が必要なら hidden input で値保持）
-- **内部の流れ**
-  1. プレビュー領域クリック → `PhotoCutoutPanel` を open
-  2. `onComplete(blob)` で `uploadImageAndGetUrl(blob)` を実行
-  3. 取得した URL を `onChange(url)` で親に返す
-  4. `value` が更新されるとプレビュー画像も更新される
-- **UI方針**
-  - URL文字列は表示しない（必要なら hidden input に保持）
-
----
-
 ## 18. shared/api（Guestヘッダ運用の関連）
 
 ### `src/shared/api/http.ts`（仕様上の重要点）

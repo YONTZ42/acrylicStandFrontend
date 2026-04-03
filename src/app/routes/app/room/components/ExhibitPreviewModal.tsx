@@ -1,4 +1,3 @@
-import React from "react";
 import { X, Edit2 } from "lucide-react";
 import { useExhibitEditorStore, EditorStoreContext } from "@/features/exhibits/hooks/useExhibitEditorStore";
 import { ExhibitPreview3D } from "@/features/exhibits/components/ExhibitEditorModal/ExhibitPreview3D";

@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Upload, Sparkles, Palette, Layers, Check, Loader2, ImagePlus, Wand2 } from "lucide-react";
 import { cn } from "@/shared/utils/cn";

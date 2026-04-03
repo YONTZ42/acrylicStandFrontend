@@ -188,7 +188,7 @@ export function RoomPage() {
         isOpen={isShopOpen} 
         onClose={() => setIsShopOpen(false)} 
         exhibits={allAvailableExhibits}
-        onProceedToCheckout={(cartItems, total) => {
+        onProceedToCheckout={(_, total) => {
           setCheckoutAmount(total);
           setIsShopOpen(false); // ドロワーを閉じて
           setIsCheckoutOpen(true); // 決済モーダルを開く

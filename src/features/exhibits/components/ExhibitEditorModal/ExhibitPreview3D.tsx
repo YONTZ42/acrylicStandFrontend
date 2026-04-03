@@ -52,141 +52,214 @@ const ExhibitPreview3DInner: React.FC = () => {
   const cameraRef = useRef<pc.Entity | null>(null);
 
   // 操作ステート
-  const isDragging = useRef(false);
-  const lastMouseX = useRef(0);
-  const targetRotation = useRef(0);
-  const currentRotation = useRef(0);
+  const isOrbitDragging = useRef(false);
+  const lastPointerX = useRef(0);
+  const lastPointerY = useRef(0);
+
+  const targetYaw = useRef(0);
+  const currentYaw = useRef(0);
+
+  const targetPitch = useRef(12);
+  const currentPitch = useRef(12);
+
   const targetZoom = useRef(14);
   const currentZoom = useRef(14);
-  const lastPinchDist = useRef(0);
 
+  const targetPan = useRef(new pc.Vec3(0, 0, 0));
+  const currentPan = useRef(new pc.Vec3(0, 0, 0));
+
+  const lastPinchDist = useRef(0);
+  const lastTwoFingerCenter = useRef<{ x: number; y: number } | null>(null);
   // ------------------------------------------------------------------------
   // 1. PlayCanvas Application の初期化
   // ------------------------------------------------------------------------
-  useEffect(() => {
-    if (!canvasRef.current) return;
+useEffect(() => {
+  if (!canvasRef.current) return;
 
-    const app = new pc.Application(canvasRef.current, {
-      mouse: new pc.Mouse(canvasRef.current),
-      touch: new pc.TouchDevice(canvasRef.current),
-      elementInput: new pc.ElementInput(canvasRef.current),
-    });
-    app.start();
-    appRef.current = app;
+  const app = new pc.Application(canvasRef.current, {
+    mouse: new pc.Mouse(canvasRef.current),
+    touch: new pc.TouchDevice(canvasRef.current),
+    elementInput: new pc.ElementInput(canvasRef.current),
+  });
+  app.start();
+  appRef.current = app;
 
-    app.setCanvasFillMode(pc.FILLMODE_NONE);
-    app.setCanvasResolution(pc.RESOLUTION_AUTO);
+  app.setCanvasFillMode(pc.FILLMODE_NONE);
+  app.setCanvasResolution(pc.RESOLUTION_AUTO);
 
-    const handleResize = () => app.resizeCanvas();
-    window.addEventListener("resize", handleResize);
+  const handleResize = () => app.resizeCanvas();
+  window.addEventListener("resize", handleResize);
 
-    // --- Camera ---
-    const camera = new pc.Entity("camera");
-    camera.addComponent("camera", {
-      clearColor: new pc.Color(0.04, 0.04, 0.04, 0),
-      projection: pc.PROJECTION_PERSPECTIVE,
-      fov: 30,
-    });
-    camera.setPosition(0, 0, targetZoom.current);
-    app.root.addChild(camera);
-    cameraRef.current = camera;
+  // --- Camera ---
+  const camera = new pc.Entity("camera");
+  camera.addComponent("camera", {
+    clearColor: new pc.Color(0.78, 0.82, 0.88, 1),
+    projection: pc.PROJECTION_PERSPECTIVE,
+    fov: 20,
+  });
+  camera.setPosition(0, 2, targetZoom.current);
+  camera.lookAt(0, 0, 0);
+  app.root.addChild(camera);
+  cameraRef.current = camera;
 
-    // --- Lights ---
-    const dirLight = new pc.Entity("dirLight");
-    dirLight.addComponent("light", {
-      type: "directional",
-      color: new pc.Color(1, 1, 1),
-      intensity: 1.2,
-    });
-    dirLight.setEulerAngles(45, 45, 0);
-    app.root.addChild(dirLight);
+  // --- Lights ---
+  const dirLight = new pc.Entity("dirLight");
+  dirLight.addComponent("light", {
+    type: "directional",
+    color: new pc.Color(1, 1, 1),
+    intensity: 1.2,
+  });
+  dirLight.setEulerAngles(45, 0, 0);
+  app.root.addChild(dirLight);
 
-    const backLight = new pc.Entity("backLight");
-    backLight.addComponent("light", {
-      type: "directional",
-      color: new pc.Color(0.8, 0.9, 1.0),
-      intensity: 0.8,
-    });
-    backLight.setEulerAngles(135, -135, 0);
-    app.root.addChild(backLight);
+  const backLight = new pc.Entity("backLight");
+  backLight.addComponent("light", {
+    type: "directional",
+    color: new pc.Color(0.8, 0.9, 1.0),
+    intensity: 0.8,
+  });
+  backLight.setEulerAngles(135, -135, 0);
+  app.root.addChild(backLight);
 
-    // --- Acrylic Stand Group ---
-    const standGroup = new pc.Entity("standGroup");
-    app.root.addChild(standGroup);
-    standGroupRef.current = standGroup;
+  
 
-    // --- 入力イベント ---
-    app.mouse?.on(pc.EVENT_MOUSEDOWN, (e) => {
-      if (e.button === pc.MOUSEBUTTON_LEFT) {
-        isDragging.current = true;
-        lastMouseX.current = e.x;
+  // --- Acrylic Stand Group ---
+  const standGroup = new pc.Entity("standGroup");
+  app.root.addChild(standGroup);
+  standGroupRef.current = standGroup;
+
+  // --- Input ---
+  app.mouse?.on(pc.EVENT_MOUSEDOWN, (e) => {
+    if (e.button === pc.MOUSEBUTTON_LEFT) {
+      isOrbitDragging.current = true;
+      lastPointerX.current = e.x;
+      lastPointerY.current = e.y;
+    }
+  });
+
+  app.touch?.on(pc.EVENT_TOUCHSTART, (e) => {
+    if (e.touches.length === 1) {
+      isOrbitDragging.current = true;
+      lastPointerX.current = e.touches[0].x;
+      lastPointerY.current = e.touches[0].y;
+      lastTwoFingerCenter.current = null;
+    } else if (e.touches.length === 2) {
+      isOrbitDragging.current = false;
+
+      const t0 = e.touches[0];
+      const t1 = e.touches[1];
+      const dx = t0.x - t1.x;
+      const dy = t0.y - t1.y;
+      lastPinchDist.current = Math.sqrt(dx * dx + dy * dy);
+      lastTwoFingerCenter.current = {
+        x: (t0.x + t1.x) / 2,
+        y: (t0.y + t1.y) / 2,
+      };
+    }
+  });
+
+  app.mouse?.on(pc.EVENT_MOUSEWHEEL, (e) => {
+    targetZoom.current -= e.wheelDelta * 0.6;
+    targetZoom.current = pc.math.clamp(targetZoom.current, 6, 30);
+  });
+
+  const orbitByPointer = (x: number, y: number) => {
+    if (!isOrbitDragging.current) return;
+
+    const dx = x - lastPointerX.current;
+    const dy = y - lastPointerY.current;
+
+    targetYaw.current += dx * 0.35;
+    targetPitch.current -= dy * 0.25;
+    targetPitch.current = pc.math.clamp(targetPitch.current, -35, 45);
+
+    lastPointerX.current = x;
+    lastPointerY.current = y;
+  };
+
+  app.mouse?.on(pc.EVENT_MOUSEMOVE, (e) => {
+    orbitByPointer(e.x, e.y);
+  });
+
+  app.touch?.on(pc.EVENT_TOUCHMOVE, (e) => {
+    if (e.touches.length === 1) {
+      orbitByPointer(e.touches[0].x, e.touches[0].y);
+      return;
+    }
+
+    if (e.touches.length === 2) {
+      const t0 = e.touches[0];
+      const t1 = e.touches[1];
+
+      const dx = t0.x - t1.x;
+      const dy = t0.y - t1.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+
+      if (lastPinchDist.current > 0) {
+        targetZoom.current += (lastPinchDist.current - dist) * 0.06;
+        targetZoom.current = pc.math.clamp(targetZoom.current, 6, 30);
       }
-    });
+      lastPinchDist.current = dist;
 
-    app.touch?.on(pc.EVENT_TOUCHSTART, (e) => {
-      if (e.touches.length === 1) {
-        isDragging.current = true;
-        lastMouseX.current = e.touches[0].x;
-      } else if (e.touches.length === 2) {
-        isDragging.current = false;
-        const dx = e.touches[0].x - e.touches[1].x;
-        const dy = e.touches[0].y - e.touches[1].y;
-        lastPinchDist.current = Math.sqrt(dx * dx + dy * dy);
+      const center = {
+        x: (t0.x + t1.x) / 2,
+        y: (t0.y + t1.y) / 2,
+      };
+
+      if (lastTwoFingerCenter.current) {
+        const moveX = center.x - lastTwoFingerCenter.current.x;
+        const moveY = center.y - lastTwoFingerCenter.current.y;
+
+        const panScale = currentZoom.current * 0.0025;
+        targetPan.current.x -= moveX * panScale;
+        targetPan.current.y += moveY * panScale;
       }
-    });
 
-    app.mouse?.on(pc.EVENT_MOUSEWHEEL, (e) => {
-      targetZoom.current -= e.wheelDelta * 0.5;
-      targetZoom.current = pc.math.clamp(targetZoom.current, 5, 30);
-    });
+      lastTwoFingerCenter.current = center;
+    }
+  });
 
-    const onMove = (x: number) => {
-      if (isDragging.current) {
-        targetRotation.current += (x - lastMouseX.current) * 0.5;
-        lastMouseX.current = x;
-      }
-    };
+  const onEnd = () => {
+    isOrbitDragging.current = false;
+    lastTwoFingerCenter.current = null;
+  };
 
-    app.mouse?.on(pc.EVENT_MOUSEMOVE, (e) => onMove(e.x));
-    app.touch?.on(pc.EVENT_TOUCHMOVE, (e) => {
-      if (e.touches.length === 1) {
-        onMove(e.touches[0].x);
-      } else if (e.touches.length === 2) {
-        const dx = e.touches[0].x - e.touches[1].x;
-        const dy = e.touches[0].y - e.touches[1].y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        targetZoom.current += (lastPinchDist.current - dist) * 0.05;
-        targetZoom.current = pc.math.clamp(targetZoom.current, 5, 30);
-        lastPinchDist.current = dist;
-      }
-    });
+  app.mouse?.on(pc.EVENT_MOUSEUP, onEnd);
+  app.touch?.on(pc.EVENT_TOUCHEND, onEnd);
+  app.touch?.on(pc.EVENT_TOUCHCANCEL, onEnd);
 
-    const onEnd = () => {
-      isDragging.current = false;
-    };
-    app.mouse?.on(pc.EVENT_MOUSEUP, onEnd);
-    app.touch?.on(pc.EVENT_TOUCHEND, onEnd);
-    app.touch?.on(pc.EVENT_TOUCHCANCEL, onEnd);
+  app.on("update", (dt) => {
+    currentYaw.current = pc.math.lerp(currentYaw.current, targetYaw.current, dt * 10);
+    currentPitch.current = pc.math.lerp(currentPitch.current, targetPitch.current, dt * 10);
+    currentZoom.current = pc.math.lerp(currentZoom.current, targetZoom.current, dt * 10);
 
-    // --- フレーム更新 ---
-    app.on("update", (dt) => {
-      if (standGroupRef.current) {
-        currentRotation.current = pc.math.lerp(currentRotation.current, targetRotation.current, dt * 10);
-        standGroupRef.current.setLocalEulerAngles(0, currentRotation.current, 0);
-      }
-      if (cameraRef.current) {
-        currentZoom.current = pc.math.lerp(currentZoom.current, targetZoom.current, dt * 10);
-        const pos = cameraRef.current.getLocalPosition();
-        cameraRef.current.setLocalPosition(pos.x, pos.y, currentZoom.current);
-      }
-    });
+    currentPan.current.lerp(currentPan.current, targetPan.current, dt * 10);
 
-    return () => {
-      window.removeEventListener("resize", handleResize);
-      app.destroy();
-      appRef.current = null;
-    };
-  }, []);
+    if (cameraRef.current) {
+      const yawRad = pc.math.DEG_TO_RAD * currentYaw.current;
+      const pitchRad = pc.math.DEG_TO_RAD * currentPitch.current;
+      const radius = currentZoom.current;
+
+      const cosPitch = Math.cos(pitchRad);
+      const x = Math.sin(yawRad) * cosPitch * radius;
+      const y = Math.sin(pitchRad) * radius;
+      const z = Math.cos(yawRad) * cosPitch * radius;
+
+      cameraRef.current.setLocalPosition(
+        currentPan.current.x + x,
+        currentPan.current.y + y,
+        currentPan.current.z + z
+      );
+      cameraRef.current.lookAt(currentPan.current);
+    }
+  });
+
+  return () => {
+    window.removeEventListener("resize", handleResize);
+    app.destroy();
+    appRef.current = null;
+  };
+}, []);
 
   // ------------------------------------------------------------------------
   // 2. メッシュ生成と配置

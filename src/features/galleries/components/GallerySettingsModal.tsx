@@ -3,214 +3,167 @@ import { cn } from "@/shared/utils/cn";
 import { useToast } from "@/app/providers/ToastProvider";
 import { useDeleteGallery, useGalleryDetail, useUpdateGallery } from "@/features/galleries/hooks";
 import type { PatchGalleryReq } from "@/features/galleries/api";
+import { Copy, ExternalLink, Settings, Trash2, X } from "lucide-react";
 
 type Props = {
   open: boolean;
   onClose: () => void;
-  galleryId: string;
-  className?: string;
+  galleryId: string | null;
 };
 
-export function GallerySettingsModal(props: Props) {
+export function GallerySettingsModal({ open, onClose, galleryId }: Props) {
   const toast = useToast();
-
-  const detail = useGalleryDetail(props.open ? props.galleryId : null);
+  const detail = useGalleryDetail(open ? galleryId : null);
   const update = useUpdateGallery();
   const del = useDeleteGallery();
 
   const g = detail.data;
-
   const [title, setTitle] = useState("");
-  const [isPublic, setIsPublic] = useState(false);
+  const[isPublic, setIsPublic] = useState(false);
 
   useEffect(() => {
-    if (!props.open) return;
-    if (!g) return;
-
+    if (!open || !g) return;
     setTitle((g.title ?? "").toString());
     setIsPublic(!!g.isPublic);
-  },[props.open, g?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [open, g?.id]);
 
   const busy = detail.isLoading || update.isPending || del.isPending;
-
-  const canSave = useMemo(() => {
+  const changed = useMemo(() => {
     if (!g) return false;
-    const nextTitle = title.trim();
-    const curTitle = (g.title ?? "").toString().trim();
-    const changed = nextTitle !== curTitle || isPublic !== !!g.isPublic;
-    return changed && !busy;
-  }, [g, title, isPublic, busy]);
+    return title.trim() !== (g.title ?? "").toString().trim() || isPublic !== !!g.isPublic;
+  },[g, title, isPublic]);
 
   const publicUrl = useMemo(() => {
     if (!g?.slug) return "";
-    if (typeof window === "undefined") return `/g/${g.slug}`;
     return `${window.location.origin}/g/${g.slug}`;
-  }, [g?.slug]);
+  },[g?.slug]);
 
   async function onSave() {
     if (!g) return;
-
-    const body: PatchGalleryReq = {
-      title: title.trim() || undefined,
-      isPublic,
-    } as unknown as PatchGalleryReq;
-
     try {
-      await update.mutateAsync({ id: g.id, body });
-      toast.success("Saved", { title: "Gallery" });
-      props.onClose();
+      await update.mutateAsync({ 
+        id: g.id, 
+        body: { title: title.trim(), isPublic } as unknown as PatchGalleryReq 
+      });
+      toast.success("設定を保存しました");
+      onClose();
     } catch {
-      toast.error("Failed to save", { title: "Gallery" });
+      toast.error("保存に失敗しました");
     }
   }
 
   async function onDelete() {
-    const ok = window.confirm("Delete this gallery? This cannot be undone.");
-    if (!ok) return;
-
+    if (!window.confirm("本当にこの祭壇を削除しますか？\n（アクスタは消えません）")) return;
     try {
-      await del.mutateAsync({ id: props.galleryId });
-      toast.success("Deleted", { title: "Gallery" });
-      props.onClose();
+      if(galleryId) await del.mutateAsync({ id: galleryId });
+      toast.success("削除しました");
+      onClose();
     } catch {
-      toast.error("Failed to delete", { title: "Gallery" });
+      toast.error("削除に失敗しました");
     }
   }
 
-  async function onCopyPublicUrl() {
+  async function onCopyUrl() {
     if (!publicUrl) return;
     try {
       await navigator.clipboard.writeText(publicUrl);
-      toast.success("Copied public URL", { title: "Gallery" });
+      toast.success("URLをコピーしました！");
     } catch {
-      toast.error("Failed to copy URL", { title: "Gallery" });
+      toast.error("コピーに失敗しました");
     }
   }
 
-  if (!props.open) return null;
+  if (!open || !galleryId) return null;
 
   return (
-    <div className={cn("fixed inset-0 z-50 flex items-center justify-center p-4", props.className)} role="dialog" aria-modal="true">
-      <div
-        className="absolute inset-0 bg-brand-text/20 backdrop-blur-sm transition-opacity"
-        onClick={() => (busy ? null : props.onClose())}
-      />
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-brand-text/30 backdrop-blur-sm" onClick={() => !busy && onClose()} />
 
-      <div className="relative w-full max-w-md rounded-[2rem] border border-brand-border bg-brand-surface p-8 shadow-xl">
-        <div className="flex flex-col mb-8 gap-2">
-          <div className="flex items-start justify-between">
-            <h2 className="text-2xl font-extrabold text-brand-text tracking-tight">Gallery Settings</h2>
-            <button
-              type="button"
-              className="rounded-full bg-brand-bg-soft px-4 py-2 text-sm font-bold text-brand-text hover:bg-brand-border transition-all active:scale-95 disabled:opacity-50"
-              onClick={props.onClose}
-              disabled={busy}
-            >
-              Close
-            </button>
-          </div>
-          <div className="inline-flex self-start items-center text-xs font-bold text-brand-text-muted bg-brand-bg-soft px-3 py-1 rounded-full border border-brand-border-strong">
-            {detail.isLoading ? "Loading..." : g ? `slug: ${g.slug}` : "Not found"}
-          </div>
+      <div className="relative w-full max-w-md rounded-[2.5rem] border border-brand-border bg-brand-surface p-8 shadow-2xl animate-in fade-in zoom-in-95">
+        
+        {/* Header */}
+        <div className="flex items-center justify-between mb-8">
+          <h2 className="text-2xl font-extrabold text-brand-text tracking-tight flex items-center gap-2">
+            <Settings className="text-brand-primary" /> 設定・シェア
+          </h2>
+          <button onClick={onClose} disabled={busy} className="p-2 rounded-full bg-brand-bg-soft text-brand-text-muted hover:text-brand-text hover:bg-brand-border transition-colors">
+            <X size={24} strokeWidth={2.5} />
+          </button>
         </div>
 
         <div className="space-y-6">
-          <label className="block">
-            <div className="text-xs font-extrabold tracking-wide text-brand-text-muted mb-2 uppercase">Title</div>
+          {/* Title Edit */}
+          <div>
+            <label className="text-xs font-extrabold text-brand-text-muted uppercase tracking-wider mb-2 block">
+              祭壇の名前
+            </label>
             <input
-              className={cn(
-                "w-full rounded-2xl border border-brand-border-strong bg-brand-bg-soft px-4 py-3.5 text-sm font-bold text-brand-text",
-                "placeholder:text-brand-text-soft focus:outline-none focus:border-brand-primary focus:bg-white transition-all shadow-sm",
-                "disabled:opacity-60",
-              )}
+              className="w-full rounded-2xl border border-brand-border-strong bg-brand-bg-soft px-4 py-3.5 text-sm font-bold text-brand-text focus:outline-none focus:border-brand-primary focus:bg-white transition-all"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="Gallery title"
               disabled={busy || !g}
             />
-          </label>
+          </div>
 
-          <label className="flex items-center justify-between rounded-2xl border border-brand-border-strong bg-brand-bg-soft px-5 py-4 cursor-pointer hover:bg-white transition-colors">
-            <div>
-              <div className="text-sm font-extrabold text-brand-text">Public</div>
-              <div className="text-xs font-medium text-brand-text-muted mt-0.5">Anyone with the link can view</div>
-            </div>
-            <input
-              type="checkbox"
-              className="h-5 w-5 accent-brand-primary cursor-pointer"
-              checked={isPublic}
-              onChange={(e) => setIsPublic(e.target.checked)}
-              disabled={busy || !g}
-            />
-          </label>
-
-          {isPublic && g?.slug ? (
-            <div className="rounded-2xl border border-brand-primary/20 bg-brand-primary-soft p-5 shadow-sm">
-              <div className="text-xs font-extrabold text-brand-primary uppercase tracking-wide">Public URL</div>
-              <div className="mt-1.5 break-all text-sm font-bold text-brand-text">{publicUrl}</div>
-
-              <div className="mt-4 flex items-center gap-3">
-                <button
-                  type="button"
-                  className="rounded-full bg-brand-primary px-5 py-2 text-xs font-bold text-white shadow-sm hover:bg-brand-primary-hover active:scale-95 transition-all"
-                  onClick={onCopyPublicUrl}
-                >
-                  Copy URL
-                </button>
-                <a
-                  href={publicUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="rounded-full bg-white border border-brand-primary/20 px-5 py-2 text-xs font-bold text-brand-primary hover:bg-brand-bg-soft active:scale-95 transition-all"
-                >
-                  Open
-                </a>
+          {/* Share Toggle */}
+          <div className={cn("rounded-2xl border transition-colors duration-300 p-5", isPublic ? "border-brand-primary bg-brand-primary-soft/30" : "border-brand-border-strong bg-brand-bg-soft")}>
+            <div className="flex items-center justify-between cursor-pointer" onClick={() => !busy && setIsPublic(!isPublic)}>
+              <div>
+                <div className="text-sm font-extrabold text-brand-text">公開してシェアする</div>
+                <div className="text-[10px] font-bold text-brand-text-muted mt-0.5">URLを知っている人が閲覧できます</div>
               </div>
-
-              {!g.isPublic ? (
-                <div className="mt-4 text-xs font-bold text-brand-text-muted bg-white/50 px-3 py-2 rounded-xl border border-brand-primary/10">
-                  SaveするとこのURLで公開されます。
-                </div>
-              ) : null}
+              
+              {/* Cute Toggle Switch */}
+              <div className={cn("w-14 h-8 rounded-full flex items-center p-1 transition-colors duration-300", isPublic ? "bg-brand-mint" : "bg-brand-border-strong")}>
+                <div className={cn("w-6 h-6 bg-white rounded-full shadow-sm transition-transform duration-300", isPublic ? "translate-x-6" : "translate-x-0")} />
+              </div>
             </div>
-          ) : null}
+
+            {/* URL Display Area (Animates in when public) */}
+            {isPublic && g?.slug && (
+              <div className="mt-4 pt-4 border-t border-brand-primary/20 animate-in fade-in slide-in-from-top-2">
+                <div className="flex items-center gap-2 bg-white rounded-xl border border-brand-primary/30 p-2 pl-3 shadow-sm">
+                  <span className="flex-1 text-xs font-bold text-brand-text truncate opacity-80 select-all">
+                    {publicUrl}
+                  </span>
+                  <button 
+                    onClick={onCopyUrl}
+                    className="flex-shrink-0 bg-brand-primary hover:bg-brand-primary-hover text-white p-2 rounded-lg transition-colors active:scale-95"
+                  >
+                    <Copy size={16} />
+                  </button>
+                </div>
+                <div className="mt-3 flex justify-end">
+                  <a href={publicUrl} target="_blank" rel="noreferrer" className="text-xs font-bold text-brand-primary hover:text-brand-primary-hover flex items-center gap-1">
+                    プレビューを見る <ExternalLink size={12} />
+                  </a>
+                </div>
+                {!g.isPublic && (
+                  <p className="mt-2 text-[10px] font-bold text-brand-secondary">※ 下の「保存する」を押すと公開されます</p>
+                )}
+              </div>
+            )}
+          </div>
         </div>
 
-        <div className="mt-8 pt-6 border-t border-brand-border flex items-center justify-between gap-2">
+        {/* Footer Actions */}
+        <div className="mt-10 flex items-center justify-between gap-4">
           <button
-            type="button"
-            className="rounded-full bg-brand-secondary/10 px-5 py-2.5 text-sm font-bold text-brand-secondary hover:bg-brand-secondary/20 active:scale-95 transition-all disabled:opacity-50"
             onClick={onDelete}
             disabled={busy || !g}
+            className="flex items-center gap-1 text-xs font-bold text-brand-secondary/70 hover:text-brand-secondary transition-colors"
           >
-            Delete
+            <Trash2 size={16} /> 削除する
           </button>
 
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              className="rounded-full bg-brand-bg-soft border border-brand-border px-5 py-2.5 text-sm font-bold text-brand-text hover:bg-brand-border active:scale-95 transition-all disabled:opacity-50"
-              onClick={props.onClose}
-              disabled={busy}
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              className="rounded-full bg-brand-primary px-8 py-2.5 text-sm font-bold text-white shadow-md shadow-brand-primary/20 hover:bg-brand-primary-hover active:scale-95 transition-all disabled:opacity-50 disabled:grayscale"
-              onClick={onSave}
-              disabled={!canSave}
-            >
-              {update.isPending ? "Saving..." : "Save"}
-            </button>
-          </div>
+          <button
+            onClick={onSave}
+            disabled={!changed || busy}
+            className="rounded-full bg-gradient-to-tr from-brand-primary to-brand-mint px-8 py-3 text-sm font-extrabold text-white shadow-md shadow-brand-primary/20 hover:-translate-y-0.5 active:scale-95 transition-all disabled:opacity-50 disabled:grayscale"
+          >
+            {update.isPending ? "保存中..." : "保存する"}
+          </button>
         </div>
-
-        {detail.isError ? (
-          <div className="mt-4 rounded-xl border border-brand-secondary/30 bg-brand-secondary/10 px-4 py-3 text-sm font-bold text-brand-secondary">
-            Failed to load gallery.
-          </div>
-        ) : null}
       </div>
     </div>
   );

@@ -1,257 +1,215 @@
-import React, { useState } from "react";
-import { Plus, Save, Loader2 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import { useUpsertExhibit } from "@/features/exhibits/hooks";
+import React, { useState, useRef, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import { Upload, Sparkles, Palette, Layers, Check, Loader2, ImagePlus, Wand2 } from "lucide-react";
+import { cn } from "@/shared/utils/cn";
+import { useToast } from "@/app/providers/ToastProvider";
+
+// Framework
 import { useExhibitImageUpload } from "@/features/exhibits/hooks/useExhibitImageUpload";
-import { useGalleriesList } from "@/features/galleries/hooks";
-import type { UpsertExhibitReq } from "@/features/exhibits/api";
-
+import { useUpsertExhibit } from "@/features/exhibits/hooks/useUpsertExhibit";
 import { useExhibitEditorStore, EditorStoreContext } from "@/features/exhibits/hooks/useExhibitEditorStore";
-import { LayerThumbCard } from "@/features/exhibits/components/ExhibitEditorModal/LayerThumbCard";
 import { ExhibitPreview3D } from "@/features/exhibits/components/ExhibitEditorModal/ExhibitPreview3D";
-import { TitleDescriptionForm } from "@/features/exhibits/components/ExhibitEditorModal/TitleDescriptionForm";
-import { LayerEditorModal } from "@/features/exhibits/components/ExhibitEditorModal/LayerEditorModal";
 
-export const StudioExhibitEditor: React.FC = () => {
+// Tabs
+import { StudioTabCutout } from "./StudioTabCutout";
+import { StudioTabBackplate } from "./StudioTabBackplate";
+import { StudioTabMaterial } from "./StudioTabMaterial";
+
+type TabKey = "STYLE" | "MATERIAL" | "BACKPLATE";
+
+export function StudioExhibitEditor() {
   const navigate = useNavigate();
-  const [isStarted, setIsStarted] = useState(false);
+  const location = useLocation();
+  const toast = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // 初期データの受け取り（RoomDrawerから遷移してきた場合など）
+  const initialExhibit = location.state?.exhibit;
+  const passedSlotIndex = new URLSearchParams(location.search).get("slot") 
+                          ? parseInt(new URLSearchParams(location.search).get("slot")!) 
+                          : null;
+
+  // Store Initialization
   const store = useExhibitEditorStore({
-    title: "",
-    description: "",
-    foregroundUrl: null,
-    backgroundUrl: null,
-    originalUrl: null,
-    styleConfig: { depth: 5, foregroundEffect: "none", backgroundEffect: "none" },
+    title: initialExhibit?.title || "",
+    description: initialExhibit?.description || "",
+    foregroundUrl: initialExhibit?.imageForegroundUrl || null,
+    backgroundUrl: initialExhibit?.imageBackgroundUrl || null,
+    originalUrl: initialExhibit?.imageOriginalUrl || null,
+    styleConfig: initialExhibit?.styleConfig || { depth: 5, foregroundEffect: "none", backgroundEffect: "none" },
   });
 
-  const galleriesQuery = useGalleriesList();
-  const { uploadImageAndGetUrl, isUploading } = useExhibitImageUpload();
-  
-  const [selectedGalleryId, setSelectedGalleryId] = useState<string>("");
-  const [selectedSlotIndex, setSelectedSlotIndex] = useState<number>(0);
-  const[isSavingLocal, setIsSavingLocal] = useState(false);
+  const { uploadImageAndGetUrl } = useExhibitImageUpload();
+  // 編集中のGalleryID（仮として "me"）
+  const upsert = useUpsertExhibit("me"); 
 
-  const upsert = useUpsertExhibit(selectedGalleryId || "dummy");
+  const [activeTab, setActiveTab] = useState<TabKey>("STYLE");
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [processMsg, setProcessMsg] = useState("");
+
+  const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    store.updateState({ originalBlob: file, foregroundBlob: file }); // まずはそのまま配置
+    if (fileInputRef.current) fileInputRef.current.value = "";
+    toast.success("画像を読み込みました。下の「魔法で切り抜く」を試してみてね！");
+  };
 
   const handleSave = async () => {
-    if (!selectedGalleryId) {
-      alert("Please select a target gallery.");
-      return;
-    }
+    if (!store.foregroundBlob && !store.foregroundUrl) return;
+    
+    setIsProcessing(true);
+    setProcessMsg("アクスタを錬成しています... 💖");
 
-    setIsSavingLocal(true);
     try {
       let fgUrl = store.foregroundUrl;
       let bgUrl = store.backgroundUrl;
       let origUrl = store.originalUrl;
 
-      if (store.foregroundBlob) {
-        fgUrl = await uploadImageAndGetUrl(store.foregroundBlob);
-        store.setLayerUrl("foreground", fgUrl);
-      }
-      if (store.backgroundBlob) {
-        bgUrl = await uploadImageAndGetUrl(store.backgroundBlob);
-        store.setLayerUrl("background", bgUrl);
-      }
-      if (store.originalBlob && !origUrl) {
-         origUrl = await uploadImageAndGetUrl(store.originalBlob);
-         store.updateState({ originalUrl: origUrl });
-      }
+      if (store.foregroundBlob) fgUrl = await uploadImageAndGetUrl(store.foregroundBlob);
+      if (store.backgroundBlob) bgUrl = await uploadImageAndGetUrl(store.backgroundBlob);
+      if (store.originalBlob) origUrl = await uploadImageAndGetUrl(store.originalBlob);
 
-      const body = {
-        slotIndex: selectedSlotIndex,
-        title: store.title.trim() || "",
-        description: store.description.trim() || "",
-        imageOriginalUrl: origUrl || "",
-        imageForegroundUrl: fgUrl || "",
-        imageBackgroundUrl: bgUrl || "",
-        styleConfig: store.styleConfig,
-      };
+      // おもちゃ箱 (slot_index 12以降) に保存。編集中なら元のslot
+      const targetSlot = passedSlotIndex !== null ? passedSlotIndex : 12 + Math.floor(Math.random() * 80);
 
       await upsert.mutateAsync({
-        slotIndex: selectedSlotIndex,
-        body: body as unknown as UpsertExhibitReq,
+        slotIndex: targetSlot,
+        body: {
+          slotIndex: targetSlot,
+          title: store.title || "My アクスタ",
+          description: store.description,
+          imageOriginalUrl: origUrl || "",
+          imageForegroundUrl: fgUrl || "",
+          imageBackgroundUrl: bgUrl || "",
+          styleConfig: store.styleConfig,
+        }
       });
 
-      navigate(`/app/galleries/${selectedGalleryId}`);
-    } catch (e) {
-      console.error("Save failed:", e);
-      alert("Failed to save exhibit.");
+      toast.success("完成！祭壇に戻ります");
+      navigate("/app/room");
+    } catch (err) {
+      console.error(err);
+      toast.error("保存に失敗しました");
     } finally {
-      setIsSavingLocal(false);
+      setIsProcessing(false);
     }
   };
 
-  const isProcessing = isSavingLocal || isUploading || upsert.isPending;
-  const canSave = !!(store.foregroundBlob || store.foregroundUrl) && !!selectedGalleryId;
+  const hasImage = !!(store.foregroundBlob || store.foregroundUrl);
 
   return (
     <EditorStoreContext.Provider value={store}>
-      <div className="flex flex-col h-full w-full max-w-3xl mx-auto bg-brand-surface border-x border-brand-border shadow-sm">
+      <div className="absolute inset-0 w-full h-full bg-[#050506] flex flex-col font-sans overflow-hidden">
         
-        {/* ==============================
-            上部: 固定エリア (プレビュー / ボタン)
-            ============================== */}
-        <div className="flex-shrink-0 h-[40vh] min-h-[300px] border-b border-brand-border bg-brand-bg relative z-10 overflow-hidden">
-          {!isStarted ? (
-            <div className="absolute inset-0 p-6 flex items-center justify-center bg-brand-bg-soft">
-              <button
-                onClick={() => setIsStarted(true)}
-                className="flex flex-col items-center justify-center w-full h-full max-w-sm max-h-64 rounded-3xl border-2 border-dashed border-brand-border-strong bg-white hover:border-brand-primary hover:bg-brand-primary-soft transition-all duration-200 group"
-              >
-                <div className="p-5 rounded-full bg-brand-primary-soft group-hover:bg-brand-primary text-brand-primary group-hover:text-white transition-colors duration-200 mb-5 shadow-sm">
-                  <Plus size={40} strokeWidth={2.5} />
-                </div>
-                <span className="text-xl font-extrabold text-brand-text tracking-tight">アクスタを作る</span>
-                <span className="mt-2 text-sm font-bold text-brand-text-muted">Tap to start editing</span>
-              </button>
-            </div>
+        {/* HEADER */}
+        <div className="absolute top-4 left-4 right-4 z-20 flex justify-between items-center pointer-events-none">
+          <div className="pointer-events-auto bg-brand-surface/80 backdrop-blur-md px-4 py-2 rounded-full border border-white/20 shadow-glass flex items-center gap-2">
+            <Wand2 size={16} className="text-brand-primary" />
+            <span className="text-brand-text font-extrabold text-sm tracking-wide">アクスタ錬成所</span>
+          </div>
+          <button 
+            onClick={() => navigate("/app/room")}
+            className="pointer-events-auto text-xs font-bold bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-full backdrop-blur-md transition-colors"
+          >
+            やめる
+          </button>
+        </div>
+
+        {/* 3D PREVIEW (60%) */}
+        <div className="flex-[5.5] sm:flex-[6] relative bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-brand-bg-soft/20 via-black to-black">
+          {hasImage ? (
+            <ExhibitPreview3D />
           ) : (
-            <div className="absolute inset-0 bg-brand-bg">
-               <ExhibitPreview3D />
-               
-               <div className="absolute top-4 left-4 px-3 py-1.5 rounded-full bg-white/70 backdrop-blur-md text-[11px] font-extrabold text-brand-primary border border-white/40 shadow-sm pointer-events-none tracking-wide">
-                 3D PREVIEW
-               </div>
+            <div className="absolute inset-0 flex flex-col items-center justify-center">
+              <div className="w-32 h-32 bg-white/5 rounded-full flex items-center justify-center animate-pulse mb-4">
+                <ImagePlus size={48} className="text-brand-text-soft opacity-50" />
+              </div>
+              <p className="text-brand-text-soft font-bold text-sm tracking-widest uppercase">画像をアップロードしてください</p>
+            </div>
+          )}
+
+          {/* LOADING OVERLAY */}
+          {isProcessing && (
+            <div className="absolute inset-0 z-30 bg-black/60 backdrop-blur-md flex flex-col items-center justify-center transition-all animate-in fade-in">
+              <Loader2 className="animate-spin text-brand-primary mb-4" size={48} strokeWidth={2} />
+              <div className="text-white font-extrabold text-lg tracking-tight animate-pulse bg-gradient-to-r from-brand-primary to-brand-accent bg-clip-text text-transparent text-center px-4">
+                {processMsg}
+              </div>
             </div>
           )}
         </div>
 
-        {/* ==============================
-            下部: 編集エリア (スクロール領域)
-            ============================== */}
-        {isStarted ? (
-          <div className="flex-1 overflow-y-auto p-4 sm:p-8 space-y-8 pb-12 bg-brand-bg">
-            {/* Action Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 sticky top-0 z-20 pt-2 -mt-2 bg-brand-bg/90 backdrop-blur-xl border-b border-brand-border px-2">
-              <h2 className="text-xl font-extrabold text-brand-text tracking-tight">Editor Menu</h2>
-              <button
-                onClick={handleSave}
-                disabled={!canSave || isProcessing}
-                className="flex items-center justify-center gap-2 px-8 py-3 bg-brand-primary hover:bg-brand-primary-hover text-white text-sm font-bold rounded-full disabled:opacity-50 transition-colors shadow-md w-full sm:w-auto active:scale-95"
-              >
-                {isProcessing ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} strokeWidth={2.5} />}
-                {isProcessing ? "Saving..." : "Save to Gallery"}
-              </button>
+        {/* DRAWER (40%) */}
+        <div className="flex-[4.5] sm:flex-[4] bg-brand-surface/95 backdrop-blur-3xl border-t border-brand-border rounded-t-[2.5rem] shadow-[0_-10px_40px_rgba(0,0,0,0.3)] flex flex-col relative z-20">
+          
+          {!hasImage ? (
+            <div className="flex-1 flex flex-col items-center justify-center p-8 text-center space-y-6">
+              <div>
+                <h2 className="text-2xl font-black text-brand-text tracking-tight">推しを召喚しよう！</h2>
+                <p className="text-xs font-bold text-brand-text-muted mt-2">1枚の画像から、AIの魔法で<br/>最高のアクスタを作ります。</p>
+              </div>
+              <label className="w-full max-w-xs cursor-pointer group">
+                <div className="w-full rounded-full bg-gradient-to-tr from-brand-primary to-brand-mint py-4 px-8 text-white font-extrabold text-base shadow-lg shadow-brand-primary/30 group-hover:-translate-y-1 group-active:scale-95 transition-all flex items-center justify-center gap-2">
+                  <Upload size={20} strokeWidth={2.5} /> 画像を選ぶ
+                </div>
+                <input type="file" accept="image/*" className="hidden" ref={fileInputRef} onChange={handleUpload} />
+              </label>
             </div>
-
-            {/* Target Gallery Selection */}
-            <section className="bg-white p-6 rounded-3xl border border-brand-border shadow-sm">
-              <h3 className="text-sm font-extrabold text-brand-secondary mb-5 flex items-center gap-2 tracking-wide uppercase">
-                <span className="w-2.5 h-2.5 rounded-full bg-brand-secondary"></span>
-                Save Destination
-              </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                <div>
-                  <label className="block text-xs font-bold text-brand-text-muted mb-2">Gallery</label>
-                  <select 
-                    value={selectedGalleryId}
-                    onChange={(e) => setSelectedGalleryId(e.target.value)}
-                    className="w-full bg-brand-bg-soft border border-brand-border-strong rounded-2xl p-3.5 text-sm font-bold text-brand-text focus:outline-none focus:border-brand-primary focus:bg-white transition-colors cursor-pointer appearance-none"
-                  >
-                    <option value="" disabled>Select Gallery...</option>
-                    {(galleriesQuery.data ??[]).map((g: { id: string; title: string }) => (
-                      <option key={g.id} value={g.id}>{g.title || 'Untitled'}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-brand-text-muted mb-2">Slot Index</label>
-                  <select 
-                    value={selectedSlotIndex}
-                    onChange={(e) => setSelectedSlotIndex(Number(e.target.value))}
-                    className="w-full bg-brand-bg-soft border border-brand-border-strong rounded-2xl p-3.5 text-sm font-bold text-brand-text focus:outline-none focus:border-brand-primary focus:bg-white transition-colors cursor-pointer appearance-none"
-                  >
-                    {Array.from({ length: 12 }).map((_, i) => (
-                      <option key={i} value={i}>Slot {i + 1}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-            </section>
-
-            {/* Layers Section */}
-            <section className="bg-white p-6 rounded-3xl border border-brand-border shadow-sm">
-              <h3 className="text-sm font-extrabold text-brand-accent mb-5 flex items-center gap-2 tracking-wide uppercase">
-                <span className="w-2.5 h-2.5 rounded-full bg-brand-accent"></span>
-                Layers
-              </h3>
-              <div className="flex flex-wrap sm:flex-nowrap gap-5">
-                <LayerThumbCard 
-                  title="Background" 
-                  type="background"
-                  blob={store.backgroundBlob} 
-                  url={store.backgroundUrl} 
-                  onClick={() => store.openLayerEditor("background")} 
-                />
-                <LayerThumbCard 
-                  title="Foreground" 
-                  type="foreground"
-                  blob={store.foregroundBlob} 
-                  url={store.foregroundUrl} 
-                  onClick={() => store.openLayerEditor("foreground")} 
-                />
-              </div>
-            </section>
-
-            {/* Title & Style Section */}
-            <section className="bg-white p-6 rounded-3xl border border-brand-border shadow-sm space-y-6">
-              <h3 className="text-sm font-extrabold text-brand-mint mb-5 flex items-center gap-2 tracking-wide uppercase">
-                <span className="w-2.5 h-2.5 rounded-full bg-brand-mint"></span>
-                Details & Style
-              </h3>
+          ) : (
+            <div className="flex-1 flex flex-col h-full overflow-hidden">
               
-              <TitleDescriptionForm
-                title={store.title}
-                description={store.description}
-                onChange={({ title, description }) => store.updateState({ title, description })}
-              />
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-6 border-t border-brand-border">
-                 {/* Depth Slider */}
-                 <div>
-                    <div className="flex justify-between items-center mb-3">
-                      <label className="text-xs font-bold text-brand-text-muted">Thickness (Depth)</label>
-                      <span className="text-xs font-bold text-brand-primary bg-brand-primary-soft border border-brand-border-strong px-2.5 py-1 rounded-full">{store.styleConfig.depth}mm</span>
-                    </div>
-                    <input 
-                      type="range" min="1" max="20" step="0.5"
-                      value={store.styleConfig.depth}
-                      onChange={(e) => store.updateStyleConfig({ depth: parseFloat(e.target.value) })}
-                      className="w-full accent-brand-primary h-2.5 bg-brand-border rounded-full appearance-none cursor-pointer"
-                    />
-                 </div>
-
-                 {/* Foreground Effect */}
-                 <div>
-                    <label className="block text-xs font-bold text-brand-text-muted mb-3">Foreground Effect</label>
-                    <select 
-                      value={store.styleConfig.foregroundEffect}
-                      onChange={(e) => store.updateStyleConfig({ foregroundEffect: e.target.value as any })}
-                      className="w-full bg-brand-bg-soft border border-brand-border-strong rounded-2xl p-3.5 text-sm font-bold text-brand-text focus:outline-none focus:border-brand-primary focus:bg-white transition-colors cursor-pointer appearance-none"
-                    >
-                      <option value="none">None</option>
-                      <option value="hologram">Hologram</option>
-                      <option value="glitter">Glitter</option>
-                      <option value="emission">Emission</option>
-                    </select>
-                 </div>
+              {/* TABS */}
+              <div className="flex items-center gap-6 px-6 pt-5 pb-2 overflow-x-auto custom-scrollbar border-b border-brand-border">
+                {[
+                  { id: "STYLE", icon: Sparkles, label: "切り抜き・魔法" },
+                  { id: "BACKPLATE", icon: Layers, label: "背景プレート" },
+                  { id: "MATERIAL", icon: Palette, label: "素材" },
+                ].map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id as TabKey)}
+                    className={cn(
+                      "flex items-center gap-1.5 pb-2 text-sm font-extrabold transition-all border-b-2 whitespace-nowrap",
+                      activeTab === tab.id ? "text-brand-primary border-brand-primary" : "text-brand-text-muted border-transparent hover:text-brand-text"
+                    )}
+                  >
+                    <tab.icon size={16} /> {tab.label}
+                  </button>
+                ))}
               </div>
-            </section>
-          </div>
-        ) : (
-          <div className="flex-1 flex flex-col items-center justify-center opacity-40 pointer-events-none pb-20 bg-brand-bg">
-             <div className="w-16 h-16 rounded-full border-4 border-dashed border-brand-primary-hover animate-[spin_10s_linear_infinite] mb-4"></div>
-             <span className="text-brand-text text-sm font-extrabold tracking-widest uppercase">Ready to Create</span>
-          </div>
-        )}
 
-        {/* Sub Modal: Layer Editor */}
-        {store.editingLayer && (
-           <LayerEditorModal />
-        )}
+              {/* TAB CONTENT */}
+              <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
+                {activeTab === "STYLE" && <StudioTabCutout onStartProcess={(m) => { setProcessMsg(m); setIsProcessing(true); }} onEndProcess={() => setIsProcessing(false)} />}
+                {activeTab === "BACKPLATE" && <StudioTabBackplate onStartProcess={(m) => { setProcessMsg(m); setIsProcessing(true); }} onEndProcess={() => setIsProcessing(false)} />}
+                {activeTab === "MATERIAL" && <StudioTabMaterial />}
+              </div>
+
+              {/* FOOTER */}
+              <div className="p-4 border-t border-brand-border bg-brand-surface pb-safe flex justify-between items-center shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
+                <label className="flex items-center gap-1 cursor-pointer text-brand-text-muted hover:text-brand-text transition-colors">
+                  <div className="w-10 h-10 rounded-full bg-brand-bg-soft flex items-center justify-center border border-brand-border">
+                    <Upload size={16} />
+                  </div>
+                  <span className="text-[10px] font-bold px-2">選び直す</span>
+                  <input type="file" accept="image/*" className="hidden" onChange={handleUpload} />
+                </label>
+
+                <button 
+                  onClick={handleSave}
+                  className="bg-brand-text text-white px-8 py-3.5 rounded-full text-sm font-extrabold shadow-lg shadow-black/10 hover:-translate-y-0.5 active:scale-95 transition-all flex items-center gap-2"
+                >
+                  <Check size={18} strokeWidth={3} />
+                  完成して飾る！
+                </button>
+              </div>
+
+            </div>
+          )}
+        </div>
+
       </div>
     </EditorStoreContext.Provider>
   );
-};
+}

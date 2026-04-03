@@ -102,7 +102,7 @@ export async function runRembg(
   
   const resultUrl = res.url || res.processed_url;
   if (!resultUrl) {
-    throw new Error(res.error || "No image URL returned from Rembg Lambda");
+    throw new Error(res.error || "Nooo image URL returned from Rembg Lambda");
   }
 
   // 画像ダウンロードしてBlobで返す

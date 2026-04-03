@@ -1,20 +1,24 @@
 import { Outlet } from "react-router-dom";
 import { AppHeader } from "./AppHeader";
-import { AppBottomTabs } from "./AppBottomTabs";
+import { AppFooter } from "./AppFooter";
 
 export function AppShellLayout() {
-  // TODO: Auth ready待ちやguest発行初期化ロジックはここに配置します。
-  // const isAuthReady = useAuthReady();
-  // if (!isAuthReady) return null;
-
   return (
-    // 背景と文字色をブランドカラーに合わせ、選択時のハイライト色も追加
-    <div className="min-h-dvh bg-brand-bg text-brand-text flex flex-col selection:bg-brand-primary-soft selection:text-brand-primary">
+    // 画面全体の高さを固定し、スクロールバーを出さずにFlexで分割する
+    <div className="h-dvh bg-[#050506] text-brand-text flex flex-col selection:bg-brand-primary-soft selection:text-brand-primary overflow-hidden">
+      
+      {/* 1. 共通ヘッダー */}
       <AppHeader />
-      <main className="flex-1 pb-[68px]"> {/* AppBottomTabsの高さ分余白 */}
+
+      {/* 2. メインコンテンツ領域（残りの高さをすべて埋める） */}
+      {/* relativeを指定することで、RoomPage等の absolute inset-0 がこの枠内に収まります */}
+      <main className="flex-1 relative w-full h-full flex flex-col">
         <Outlet />
       </main>
-      <AppBottomTabs />
+
+      {/* 3. 共通フッター */}
+      <AppFooter />
+      
     </div>
   );
 }

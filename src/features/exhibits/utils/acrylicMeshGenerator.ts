@@ -109,11 +109,11 @@ const extrudeSettings = {
 
 
 const geo = new THREE.ExtrudeGeometry(shape, extrudeSettings);
-geo.center(); // 中心を原点に合わせる
+//geo.center(); // 中心を原点に合わせる
 const count = geo.getAttribute('position').count;
 const indices = count > 65535 ? new Uint32Array(count) : new Uint16Array(count);
 for (let i = 0; i < count; i++) indices[i] = i;
-
+geo.translate(0, 0, -thickness / 2);
 geo.setIndex(new THREE.BufferAttribute(indices, 1));
 
 console.log("geo index", geo.index);

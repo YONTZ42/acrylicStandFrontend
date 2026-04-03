@@ -1,3 +1,4 @@
+// src/app/AppRouter.tsx
 import { BrowserRouter, Route, Routes, Navigate, Link } from "react-router-dom";
 
 import { LandingPage } from "@/app/routes/marketing/LandingPage";
@@ -12,11 +13,9 @@ import { MarketingLayout } from "@/app/layouts/MarketingLayout";
 import { ViewerLayout } from "@/app/layouts/ViewerLayout";
 import { AppShellLayout } from "@/app/layouts/AppShellLayout";
 
-// App Pages
+// App Pages (統合後の新設計)
+import { RoomPage } from "@/app/routes/app/room/RoomPage";
 import { StudioPage } from "@/app/routes/app/studio/StudioPage";
-import { CollectionPage } from "@/app/routes/app/collection/CollectionPage";
-import { GalleriesPage } from "@/app/routes/app/galleries/GalleriesPage";
-import { GalleryWorkspacePage } from "@/app/routes/app/galleries/GalleryWorkspacePage";
 import { HubPage } from "@/app/routes/app/hub/HubPage";
 
 export function AppRouter() {
@@ -36,18 +35,11 @@ export function AppRouter() {
           </Route>
 
           <Route path="/app" element={<AppShellLayout />}>
-            {/* 4タブ構成の最初は studio に設定 */}
-            <Route index element={<Navigate to="studio" replace />} />
+            {/* メイン画面を room に設定 */}
+            <Route index element={<Navigate to="room" replace />} />
 
+            <Route path="room" element={<RoomPage />} />
             <Route path="studio" element={<StudioPage />} />
-            
-            <Route path="collection" element={<CollectionPage />} />
-
-            <Route path="galleries">
-              <Route index element={<GalleriesPage />} />
-              <Route path=":galleryId" element={<GalleryWorkspacePage />} />
-            </Route>
-
             <Route path="hub" element={<HubPage />} />
           </Route>
 
@@ -61,7 +53,7 @@ export function AppRouter() {
           <div className="font-bold opacity-90 text-brand-primary">DEV NAV</div>
           <div className="mt-1 flex gap-3 underline underline-offset-2 opacity-80 font-semibold">
             <Link to="/">/</Link>
-            <Link to="/app/studio">/app</Link>
+            <Link to="/app/room">/app</Link>
           </div>
         </div>
       ) : null}

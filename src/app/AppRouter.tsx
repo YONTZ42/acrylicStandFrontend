@@ -7,11 +7,17 @@ import { RegisterPage } from "@/app/routes/auth/RegisterPage";
 import { NotFoundPage } from "@/app/routes/misc/NotFoundPage";
 import { PublicGalleryPage } from "@/app/routes/viewer/PublicGalleryPage";
 
+import { TermsPage } from "@/app/routes/misc/TermsPage";
+import { PrivacyPage } from "@/app/routes/misc/PrivacyPage";
+import { LawPage } from "@/app/routes/misc/LawPage";
+import { ContactPage } from "@/app/routes/misc/ContactPage";
+
 // Layouts
 import { RootLayout } from "@/app/layouts/RootLayout";
 import { MarketingLayout } from "@/app/layouts/MarketingLayout";
 import { ViewerLayout } from "@/app/layouts/ViewerLayout";
 import { AppShellLayout } from "@/app/layouts/AppShellLayout";
+import { LegalLayout } from "@/app/layouts/LegalLayout"; // --- 新しく追加 ---
 
 // App Pages (統合後の新設計)
 import { RoomPage } from "@/app/routes/app/room/RoomPage";
@@ -27,8 +33,17 @@ export function AppRouter() {
             <Route path="/" element={<LandingPage />} />
           </Route>
 
+          {/* 法務・汎用ページ用ルーティング */}
+          <Route element={<LegalLayout />}>
+            <Route path="/terms" element={<TermsPage />} />
+            <Route path="/privacy" element={<PrivacyPage />} />
+            <Route path="/law" element={<LawPage />} />
+            <Route path="/contact" element={<ContactPage />} />
+          </Route>
+
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
+
 
           <Route path="/g/:slug" element={<ViewerLayout />}>
             <Route index element={<PublicGalleryPage />} />

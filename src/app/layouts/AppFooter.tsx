@@ -7,7 +7,7 @@ export function AppFooter() {
         <Link to="/terms" className="hover:text-brand-primary transition-colors">利用規約</Link>
         <Link to="/privacy" className="hover:text-brand-primary transition-colors">プライバシーポリシー</Link>
         <Link to="/law" className="hover:text-brand-primary transition-colors">特定商取引法に基づく表記</Link>
-        <a href="mailto:yongtae.hurdle0930@gmail.com" className="hover:text-brand-primary transition-colors">お問い合わせ</a>
+        <Link to="/contact" className="hover:text-brand-primary transition-colors">お問い合わせ</Link>
       </div>
       <div className="text-[8px] text-brand-text-soft/40 font-medium tracking-wider">
         © {new Date().getFullYear()} あくすたポン！ All rights reserved.

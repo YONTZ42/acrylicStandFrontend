@@ -17,14 +17,16 @@ import { ShopDrawer } from "./components/ShopDrawer";       // ★追加
 import { CheckoutModal } from "./components/CheckoutModal"; // ★追加
 import { ExhibitPreviewModal } from "./components/ExhibitPreviewModal"; // ★追加
 
+import { useSelectedGallery } from "@/features/galleries/hooks/useSelectedGallery";
+
 export function RoomPage() {
   const navigate = useNavigate();
   const toast = useToast();
   
   // States
-  const[selectedGalleryId, setSelectedGalleryId] = useState<string | null>(null);
   const[isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isMoving, setIsMoving] = useState(false);
+  const { selectedGalleryId, setSelectedGalleryId } = useSelectedGallery();
 
   // Modal States
   const[switcherOpen, setSwitcherOpen] = useState(false);
@@ -228,7 +230,7 @@ export function RoomPage() {
         onEdit={(ex) => {
           setPreviewExhibit(null);
           // 対象の slot_index (またはid) を付与して Studio に遷移
-          navigate(`/app/studio?slot=${ex.slotIndex}`, { state: { exhibit: ex } });
+          navigate(`/app/studio?slot=${ex.slot_index}`, { state: { exhibit: ex } });
         }}
       />
   

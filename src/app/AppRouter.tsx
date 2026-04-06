@@ -24,6 +24,25 @@ import { RoomPage } from "@/app/routes/app/room/RoomPage";
 import { StudioPage } from "@/app/routes/app/studio/StudioPage";
 import { HubPage } from "@/app/routes/app/hub/HubPage";
 
+import { useAuthContext } from "@/features/auth/AuthProvider"; // 追加
+
+
+
+// 認証待ちを行うコンポーネントを追加
+function AuthLoadingGuard({ children }: { children: React.ReactNode }) {
+  const { isReady } = useAuthContext();
+  
+  // 初期化（Guest ID発行またはUser復元）が終わるまで待機
+  if (!isReady) {
+    return (
+      <div className="flex h-screen w-screen items-center justify-center bg-brand-surface">
+        <div className="animate-pulse text-brand-primary">Initializing...</div>
+      </div>
+    );
+  }
+  return <>{children}</>;
+}
+
 export function AppRouter() {
   return (
     <BrowserRouter>
@@ -49,7 +68,11 @@ export function AppRouter() {
             <Route index element={<PublicGalleryPage />} />
           </Route>
 
-          <Route path="/app" element={<AppShellLayout />}>
+          <Route path="/app" element={
+            <AuthLoadingGuard>
+              <AppShellLayout />
+            </AuthLoadingGuard>}
+          >
             {/* メイン画面を room に設定 */}
             <Route index element={<Navigate to="room" replace />} />
 

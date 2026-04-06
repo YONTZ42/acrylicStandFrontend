@@ -15,7 +15,9 @@ export type RembgModel = "isnet-general-use" | "birefnet-general-lite" | "isnet-
 type ImageUrlResponse = {
   success: boolean;
   url?: string;
+  processedUrl?: string; // 表記ゆれ吸収用
   processed_url?: string; // 表記ゆれ吸収用
+
   error?: string;
 };
 
@@ -100,7 +102,7 @@ export async function runRembg(
   // Lambda実行
   const res = await invokeLambda<ImageUrlResponse>(functionUrl, payload);
   
-  const resultUrl = res.url || res.processed_url;
+  const resultUrl = res.url || res.processedUrl;
   if (!resultUrl) {
     throw new Error(res.error || "Nooo image URL returned from Rembg Lambda");
   }
@@ -135,7 +137,7 @@ export async function runGemini(
   // Lambda実行
   const res = await invokeLambda<ImageUrlResponse>(GEMINI_GEN_URL, payload);
 
-  const resultUrl = res.url || res.processed_url;
+  const resultUrl = res.url || res.processedUrl || res.processed_url;
   if (!resultUrl) {
     throw new Error(res.error || "No image URL returned from Gemini Lambda");
   }

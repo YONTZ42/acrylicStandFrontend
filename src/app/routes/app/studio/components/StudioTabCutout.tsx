@@ -12,9 +12,9 @@ type Props = {
 };
 
 const REMBG_MODELS: { id: RembgModel; name: string; desc: string }[] =[
-  { id: "isnet-general-use", name: "高精度 (汎用)", desc: "一番きれいに抜ける魔法" },
+  { id: "isnet-general-use", name: "高速・軽量", desc: "サクッと切り抜く" },
+  { id: "birefnet-general-lite", name: "高精度 (汎用)", desc: "一番きれいに抜ける魔法" },
   { id: "isnet-anime", name: "イラスト特化", desc: "アニメ画像に最適" },
-  { id: "birefnet-general-lite", name: "高速・軽量", desc: "サクッと切り抜く" },
 ];
 
 export function StudioTabCutout({ onStartProcess, onEndProcess }: Props) {

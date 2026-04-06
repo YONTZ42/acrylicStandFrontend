@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { Upload, Sparkles, Palette, Layers, Check, Loader2, ImagePlus, Wand2 } from "lucide-react";
 import { cn } from "@/shared/utils/cn";
 import { useToast } from "@/app/providers/ToastProvider";
+import { useSelectedGallery } from "@/features/galleries/hooks/useSelectedGallery";
 
 // Framework
 import { useExhibitImageUpload } from "@/features/exhibits/hooks/useExhibitImageUpload";
@@ -23,6 +24,7 @@ export function StudioExhibitEditor() {
   const toast = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+
   // 初期データの受け取り（RoomDrawerから遷移してきた場合など）
   const initialExhibit = location.state?.exhibit;
   const passedSlotIndex = new URLSearchParams(location.search).get("slot") 
@@ -41,7 +43,8 @@ export function StudioExhibitEditor() {
 
   const { uploadImageAndGetUrl } = useExhibitImageUpload();
   // 編集中のGalleryID（仮として "me"）
-  const upsert = useUpsertExhibit("me"); 
+  const { selectedGalleryId } = useSelectedGallery();
+ const upsert = useUpsertExhibit(selectedGalleryId || "");
 
   const [activeTab, setActiveTab] = useState<TabKey>("STYLE");
   const [isProcessing, setIsProcessing] = useState(false);
@@ -56,6 +59,11 @@ export function StudioExhibitEditor() {
   };
 
   const handleSave = async () => {
+    if (!selectedGalleryId) {
+      toast.error("保存先のギャラリーが選択されていません");
+      return;
+    }
+
     if (!store.foregroundBlob && !store.foregroundUrl) return;
     
     setIsProcessing(true);

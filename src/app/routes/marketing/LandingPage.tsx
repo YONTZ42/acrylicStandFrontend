@@ -2,7 +2,7 @@
 import { useCallback, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuthContext } from "@/features/auth/AuthProvider";
-import { ArrowRight, CheckCircle, Heart, Camera, Box, UserPlus, Sparkles, Wand2 } from "lucide-react";
+import { ArrowRight, CheckCircle, Heart, Camera, UserPlus, Sparkles, Wand2 } from "lucide-react";
 import { cn } from "@/shared/utils/cn";
 
 /**

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Scissors, Sparkles } from "lucide-react";
+import { Scissors, Sparkles, Image as ImageIcon, LayoutGrid } from "lucide-react";
 import { cn } from "@/shared/utils/cn";
 import { useEditorContext } from "@/features/exhibits/hooks/useExhibitEditorStore";
 import { runRembg, runGemini, type RembgModel } from "@/shared/utils/imageProcessingFromLambda";
@@ -12,9 +12,9 @@ type Props = {
 };
 
 const REMBG_MODELS: { id: RembgModel; name: string; desc: string }[] =[
-  { id: "isnet-general-use", name: "高速・軽量", desc: "サクッと切り抜く" },
-  { id: "birefnet-general-lite", name: "高精度 (汎用)", desc: "一番きれいに抜ける魔法" },
-  { id: "isnet-anime", name: "イラスト特化", desc: "アニメ画像に最適" },
+  { id: "isnet-general-use", name: "Standard", desc: "Fast & reliable" },
+  { id: "birefnet-general-lite", name: "High Quality", desc: "Best precision" },
+  { id: "isnet-anime", name: "Illustration", desc: "For 2D artworks" },
 ];
 
 export function StudioTabCutout({ onStartProcess, onEndProcess }: Props) {
@@ -23,95 +23,90 @@ export function StudioTabCutout({ onStartProcess, onEndProcess }: Props) {
   const { uploadImageAndGetUrl } = useExhibitImageUpload();
   const[selectedModel, setSelectedModel] = useState<RembgModel>("isnet-general-use");
 
-  // 背景切り抜き (Rembg)
   const handleCutout = async () => {
-    if (!store.originalBlob) return toast.error("画像がありません");
-    onStartProcess("背景を魔法で消し去っています... 🪄");
+    if (!store.originalBlob) return toast.error("Please upload an image first.");
+    onStartProcess("Removing background...");
     try {
       const resultBlob = await runRembg(store.originalBlob, selectedModel, uploadImageAndGetUrl);
       store.setLayerBlob("foreground", resultBlob);
-      toast.success("きれいに切り抜けました！");
+      toast.success("Background removed.");
     } catch (e) {
       console.error(e);
-      toast.error("切り抜きに失敗しました");
+      toast.error("Failed to remove background.");
     } finally {
       onEndProcess();
     }
   };
 
-  // 画風変換 (Gemini i2i)
   const handleAIStyle = async (prompt: string, styleName: string) => {
     if (!store.originalBlob) return;
-    onStartProcess(`${styleName}風に変換中... ✨`);
+    onStartProcess(`Applying ${styleName} filter...`);
     try {
       const resultBlob = await runGemini(prompt, store.originalBlob, uploadImageAndGetUrl);
-      store.updateState({ originalBlob: resultBlob }); // 元画像を上書き
-      // そのまま自動で切り抜きも走らせる
-      onStartProcess("背景を整理しています... ✂️");
+      store.updateState({ originalBlob: resultBlob });
+      onStartProcess("Adjusting edges...");
       const cutoutBlob = await runRembg(resultBlob, "isnet-anime", uploadImageAndGetUrl);
       store.setLayerBlob("foreground", cutoutBlob);
-      toast.success(`${styleName}になりました！`);
+      toast.success(`Style applied.`);
     } catch (e) {
       console.error(e);
-      toast.error("変換に失敗しました");
+      toast.error("Failed to apply style.");
     } finally {
       onEndProcess();
     }
   };
 
   return (
-    <div className="space-y-6">
-      {/* 1. 背景切り抜きセクション */}
-      <section className="bg-brand-bg-soft p-4 rounded-[1.5rem] border border-brand-border-strong">
-        <h3 className="text-xs font-extrabold text-brand-text-muted mb-3 flex items-center gap-1">
-          <Scissors size={14} /> 背景を消してアクスタにする
+    <div className="space-y-8">
+      <section className="bg-white p-5 rounded-2xl border border-brand-border shadow-sm">
+        <h3 className="text-xs font-light tracking-widest uppercase text-brand-text-muted mb-4 border-b border-brand-border pb-2 flex items-center gap-2">
+          <Scissors size={14} strokeWidth={1.5} /> AI Cutout
         </h3>
-        <div className="space-y-3">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {REMBG_MODELS.map((m) => (
               <button
                 key={m.id}
                 onClick={() => setSelectedModel(m.id)}
                 className={cn(
-                  "p-3 rounded-xl border text-left transition-all",
+                  "p-4 rounded-xl border text-left transition-all",
                   selectedModel === m.id 
                     ? "border-brand-primary bg-brand-primary-soft shadow-sm" 
-                    : "border-brand-border bg-white hover:border-brand-primary/50"
+                    : "border-brand-border bg-brand-bg hover:border-brand-primary/50"
                 )}
               >
-                <div className="text-xs font-extrabold text-brand-text">{m.name}</div>
-                <div className="text-[10px] font-bold text-brand-text-muted mt-0.5">{m.desc}</div>
+                <div className="text-[11px] font-medium tracking-wider text-brand-text">{m.name}</div>
+                <div className="text-[9px] font-light tracking-wide text-brand-text-muted mt-1">{m.desc}</div>
               </button>
             ))}
           </div>
           <button 
             onClick={handleCutout}
-            className="w-full py-3 rounded-xl bg-brand-text text-white text-sm font-extrabold shadow-md active:scale-95 transition-transform"
+            className="w-full py-3.5 rounded-xl bg-brand-text text-white text-[10px] font-light tracking-widest uppercase shadow-sm hover:bg-black active:scale-95 transition-all"
           >
-            切り抜く！
+            Extract Subject
           </button>
         </div>
       </section>
 
-      {/* 2. 画風変換セクション */}
       <section>
-        <h3 className="text-xs font-extrabold text-brand-text-muted mb-3 flex items-center gap-1">
-          <Sparkles size={14} /> 魔法のフィルター
+        <h3 className="text-xs font-light tracking-widest uppercase text-brand-text-muted mb-4 border-b border-brand-border pb-2 flex items-center gap-2">
+          <Sparkles size={14} strokeWidth={1.5} /> AI Filters
         </h3>
-        <div className="flex gap-3 overflow-x-auto pb-2 custom-scrollbar">
+        <div className="flex gap-4 overflow-x-auto pb-4 custom-scrollbar">
           <button 
-            onClick={() => handleAIStyle("Transform the subject into high quality flat color anime style illustration.", "アニメ")}
-            className="flex-shrink-0 w-28 aspect-square rounded-[1.5rem] border border-brand-border bg-brand-bg flex flex-col items-center justify-center gap-2 hover:border-brand-primary/50 hover:bg-brand-primary-soft transition-colors active:scale-95"
+            onClick={() => handleAIStyle("Transform the subject into high quality flat color anime style illustration.", "Anime")}
+            className="flex-shrink-0 w-32 aspect-square rounded-2xl border border-brand-border bg-white flex flex-col items-center justify-center gap-3 hover:border-brand-primary hover:bg-brand-primary-soft transition-all active:scale-95 shadow-sm group"
           >
-            <span className="text-3xl">🌸</span>
-            <span className="text-xs font-extrabold text-brand-text">アニメ風</span>
+            <ImageIcon size={24} strokeWidth={1} className="text-brand-text-soft group-hover:text-brand-primary" />
+            <span className="text-[10px] font-light tracking-widest uppercase text-brand-text">Anime Style</span>
           </button>
           <button 
-            onClick={() => handleAIStyle("Transform the subject into 16-bit retro pixel art.", "ピクセル")}
-            className="flex-shrink-0 w-28 aspect-square rounded-[1.5rem] border border-brand-border bg-brand-bg flex flex-col items-center justify-center gap-2 hover:border-brand-primary/50 hover:bg-brand-primary-soft transition-colors active:scale-95"
+            onClick={() => handleAIStyle("Transform the subject into 16-bit retro pixel art.", "Pixel")}
+            className="flex-shrink-0 w-32 aspect-square rounded-2xl border border-brand-border bg-white flex flex-col items-center justify-center gap-3 hover:border-brand-primary hover:bg-brand-primary-soft transition-all active:scale-95 shadow-sm group"
           >
-            <span className="text-3xl">👾</span>
-            <span className="text-xs font-extrabold text-brand-text">ピクセル化</span>
+            <LayoutGrid size={24} strokeWidth={1} className="text-brand-text-soft group-hover:text-brand-primary" />
+            <span className="text-[10px] font-light tracking-widest uppercase text-brand-text">Pixel Art</span>
           </button>
         </div>
       </section>

@@ -8,14 +8,13 @@ import { useUpsertExhibit, useDeleteExhibit } from "@/features/exhibits/hooks";
 import { GalleryDetailPreview3D } from "@/features/exhibits/components/playcanvas/GalleryDetailPreview3D";
 import { useToast } from "@/app/providers/ToastProvider";
 
-// Components
 import { RoomBottomNav } from "./components/RoomBottomNav";
 import { RoomDrawer } from "./components/RoomDrawer";
 import { GallerySwitcherModal } from "./components/GallerySwitcherModal";
 import { GallerySettingsModal } from "@/features/galleries/components/GallerySettingsModal";
-import { ShopDrawer } from "./components/ShopDrawer";       // ★追加
-import { CheckoutModal } from "./components/CheckoutModal"; // ★追加
-import { ExhibitPreviewModal } from "./components/ExhibitPreviewModal"; // ★追加
+import { ShopDrawer } from "./components/ShopDrawer";
+import { CheckoutModal } from "./components/CheckoutModal";
+import { ExhibitPreviewModal } from "./components/ExhibitPreviewModal";
 
 import { useSelectedGallery } from "@/features/galleries/hooks/useSelectedGallery";
 
@@ -23,24 +22,19 @@ export function RoomPage() {
   const navigate = useNavigate();
   const toast = useToast();
   
-  // States
   const[isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isMoving, setIsMoving] = useState(false);
   const { selectedGalleryId, setSelectedGalleryId } = useSelectedGallery();
 
-  // Modal States
   const[switcherOpen, setSwitcherOpen] = useState(false);
   const [settingsGalleryId, setSettingsGalleryId] = useState<string | null>(null);
 
-  // Shop States (★追加)
   const[isShopOpen, setIsShopOpen] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
-  const [checkoutAmount, setCheckoutAmount] = useState(0);
+  const[checkoutAmount, setCheckoutAmount] = useState(0);
   
-  // Preview State (★追加)
   const [previewExhibit, setPreviewExhibit] = useState<any | null>(null);
 
-  // Queries
   const galleriesQuery = useGalleriesList();
   const detailQuery = useGalleryDetail(selectedGalleryId);
   const upsert = useUpsertExhibit(selectedGalleryId || "");
@@ -50,29 +44,27 @@ export function RoomPage() {
     if (!selectedGalleryId && galleriesQuery.data && galleriesQuery.data.length > 0) {
       setSelectedGalleryId(galleriesQuery.data[0].id);
     }
-  }, [galleriesQuery.data, selectedGalleryId]);
+  },[galleriesQuery.data, selectedGalleryId]);
 
   const galleryTitle = useMemo(() => {
     const t = (detailQuery.data as any)?.title;
-    return (t && String(t).trim().length > 0 ? String(t) : "My 祭壇 💖");
+    return (t && String(t).trim().length > 0 ? String(t) : "Untitled Exhibition");
   }, [detailQuery.data]);
 
   const altarExhibits = detailQuery.normalizedExhibits ?? new Array(12).fill(null);
-  const toyboxExhibits = useMemo(() => {
+  
+  // 変数名を「toybox」から「collection」に変更
+  const collectionExhibits = useMemo(() => {
     const rawData = detailQuery.data as any;
     const allExhibits = (rawData?.exhibits || []) as any[];
     return allExhibits.filter((ex) => ex && ex.slot_index >= 12);
   }, [detailQuery.data]);
 
-  // 全ての有効なExhibitを一つにまとめる（ショップ用）
   const allAvailableExhibits = useMemo(() => {
     const altarValid = altarExhibits.filter(e => e);
-    return[...altarValid, ...toyboxExhibits];
-  }, [altarExhibits, toyboxExhibits]);
+    return[...altarValid, ...collectionExhibits];
+  },[altarExhibits, collectionExhibits]);
 
-  // ==========================================
-  // 移動ロジック
-  // ==========================================
   const moveExhibit = async (exhibit: any, newSlotIndex: number) => {
     if (!selectedGalleryId) return;
     setIsMoving(true);
@@ -86,11 +78,10 @@ export function RoomPage() {
         imageBackgroundUrl: exhibit.imageBackgroundUrl || "",
         styleConfig: exhibit.styleConfig || { depth: 5, foregroundEffect: "none", backgroundEffect: "none" }
       };
-      
       await upsert.mutateAsync({ slotIndex: newSlotIndex, body });
       await remove.mutateAsync({ slotIndex: exhibit.slot_index });
     } catch (e) {
-      toast.error("移動に失敗しました");
+      toast.error("配置の変更に失敗しました");
     } finally {
       setIsMoving(false);
     }
@@ -99,14 +90,14 @@ export function RoomPage() {
   const handleMoveToAltar = async (exhibit: any) => {
     const emptySlotIndex = altarExhibits.findIndex(ex => ex === null);
     if (emptySlotIndex === -1) {
-      toast.error("祭壇がいっぱいです！");
+      toast.error("展示スペースに空きがありません");
       return;
     }
     await moveExhibit(exhibit, emptySlotIndex);
   };
 
-  const handleMoveToToybox = async (exhibit: any) => {
-    const existingIndices = toyboxExhibits.map(ex => ex.slot_index);
+  const handleMoveToCollection = async (exhibit: any) => {
+    const existingIndices = collectionExhibits.map(ex => ex.slot_index);
     let newSlotIndex = 12;
     while (existingIndices.includes(newSlotIndex)) newSlotIndex++;
     await moveExhibit(exhibit, newSlotIndex);
@@ -114,7 +105,7 @@ export function RoomPage() {
 
   const handleDelete = async (exhibit: any) => {
     if (!selectedGalleryId) return;
-    if (confirm("このアクスタを完全に削除しますか？")) {
+    if (confirm("この作品を完全に削除しますか？")) {
       setIsMoving(true);
       try {
         await remove.mutateAsync({ slotIndex: exhibit.slot_index });
@@ -127,14 +118,11 @@ export function RoomPage() {
     }
   };
 
-  // ==========================================
-  // Render
-  // ==========================================
   if (galleriesQuery.isLoading) {
     return (
-      <div className="h-screen bg-black flex flex-col items-center justify-center text-brand-primary">
-        <Loader2 className="animate-spin mb-2" size={32} />
-        <span className="font-bold text-sm tracking-widest">Loading Room...</span>
+      <div className="h-screen bg-[#050506] flex flex-col items-center justify-center text-white/50">
+        <Loader2 className="animate-spin mb-4" size={28} strokeWidth={1.5} />
+        <span className="font-light tracking-widest text-xs uppercase">Loading Exhibition...</span>
       </div>
     );
   }
@@ -145,28 +133,28 @@ export function RoomPage() {
         <GalleryDetailPreview3D slots={altarExhibits} isPaused={false} />
       </div>
 
+      {/* トップヘッダー：よりエレガントなガラスUIへ */}
       <div className="absolute top-4 sm:top-6 left-4 right-4 z-10 flex justify-between items-center pointer-events-none">
         <button 
           onClick={() => setSwitcherOpen(true)}
-          className="pointer-events-auto bg-brand-surface/80 backdrop-blur-md px-5 py-2.5 rounded-full border border-white/50 shadow-glass flex items-center gap-2 hover:bg-white transition-colors group active:scale-95"
+          className="pointer-events-auto bg-white/10 backdrop-blur-xl px-6 py-3 rounded-full border border-white/20 shadow-glass flex items-center gap-3 hover:bg-white/20 transition-all group active:scale-95"
         >
-          <h1 className="text-brand-text font-extrabold tracking-tight text-sm drop-shadow-sm truncate max-w-[150px] sm:max-w-[200px]">
+          <h1 className="text-white font-serif tracking-widest text-sm drop-shadow-sm truncate max-w-[150px] sm:max-w-[200px]">
             {galleryTitle}
           </h1>
-          <ChevronDown size={16} strokeWidth={3} className="text-brand-primary group-hover:translate-y-0.5 transition-transform" />
+          <ChevronDown size={14} strokeWidth={1.5} className="text-white/70 group-hover:translate-y-0.5 transition-transform" />
         </button>
 
         <button 
           onClick={() => setSettingsGalleryId(selectedGalleryId)}
-          className="pointer-events-auto bg-gradient-to-tr from-brand-primary to-brand-accent text-white p-3 rounded-full shadow-[0_0_15px_rgba(167,139,250,0.5)] hover:scale-105 active:scale-95 transition-transform"
+          className="pointer-events-auto bg-white/10 backdrop-blur-xl border border-white/20 text-white p-3.5 rounded-full shadow-glass hover:bg-white/20 hover:scale-105 active:scale-95 transition-all"
         >
-          <Share size={18} strokeWidth={2.5} />
+          <Share size={18} strokeWidth={1.5} />
         </button>
       </div>
 
-      {/* ボトムナビ: ★ onOpenShop を追加 */}
       <RoomBottomNav 
-        toyboxCount={toyboxExhibits.length} 
+        collectionCount={collectionExhibits.length} 
         onOpenDrawer={() => setIsDrawerOpen(true)} 
         onOpenShop={() => setIsShopOpen(true)}
       />
@@ -175,37 +163,32 @@ export function RoomPage() {
         isOpen={isDrawerOpen}
         onClose={() => setIsDrawerOpen(false)}
         altarExhibits={altarExhibits}
-        toyboxExhibits={toyboxExhibits}
+        collectionExhibits={collectionExhibits}
         isMoving={isMoving}
         onMoveToAltar={handleMoveToAltar}
-        onMoveToToybox={handleMoveToToybox}
+        onMoveToCollection={handleMoveToCollection}
         onDelete={handleDelete}
         onNavigateToStudio={() => navigate('/app/studio')}
-        onPreview={(ex) => setPreviewExhibit(ex)} // ★追加
-        />
+        onPreview={(ex) => setPreviewExhibit(ex)}
+      />
 
-
-      {/* ショップ用ドロワー ★追加 */}
       <ShopDrawer 
         isOpen={isShopOpen} 
         onClose={() => setIsShopOpen(false)} 
         exhibits={allAvailableExhibits}
         onProceedToCheckout={(_, total) => {
           setCheckoutAmount(total);
-          setIsShopOpen(false); // ドロワーを閉じて
-          setIsCheckoutOpen(true); // 決済モーダルを開く
+          setIsShopOpen(false);
+          setIsCheckoutOpen(true);
         }}
       />
 
-      {/* 決済・住所入力モーダル ★追加 */}
       <CheckoutModal 
         open={isCheckoutOpen}
         onClose={() => setIsCheckoutOpen(false)}
         totalAmount={checkoutAmount}
       />
 
-
-    {/* 5. モーダル群 */}
       <GallerySwitcherModal
         open={switcherOpen}
         onClose={() => setSwitcherOpen(false)}
@@ -223,17 +206,16 @@ export function RoomPage() {
         onClose={() => setSettingsGalleryId(null)}
         galleryId={settingsGalleryId}
       />
-    <ExhibitPreviewModal
+      
+      <ExhibitPreviewModal
         key={previewExhibit?.id || previewExhibit?.slot_index || "preview"}
         exhibit={previewExhibit}
         onClose={() => setPreviewExhibit(null)}
         onEdit={(ex) => {
           setPreviewExhibit(null);
-          // 対象の slot_index (またはid) を付与して Studio に遷移
           navigate(`/app/studio?slot=${ex.slot_index}`, { state: { exhibit: ex } });
         }}
       />
-  
     </div>
   );
 }

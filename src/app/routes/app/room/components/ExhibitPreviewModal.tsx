@@ -9,7 +9,6 @@ type Props = {
 };
 
 export function ExhibitPreviewModal({ exhibit, onClose, onEdit }: Props) {
-  // 3Dプレビューを単独で表示するため、Storeを読み取り専用（初期値）として提供
   const store = useExhibitEditorStore({
     title: exhibit?.title || "",
     description: exhibit?.description || "",
@@ -23,37 +22,34 @@ export function ExhibitPreviewModal({ exhibit, onClose, onEdit }: Props) {
 
   return (
     <EditorStoreContext.Provider value={store}>
-      <div className="fixed inset-0 z-[100] flex flex-col bg-[#050506]/95 backdrop-blur-md text-white font-sans p-4 sm:p-8 animate-in fade-in zoom-in-95 duration-200">
+      <div className="fixed inset-0 z-[100] flex flex-col bg-[#050506]/90 backdrop-blur-xl text-white font-sans p-4 sm:p-8 animate-in fade-in zoom-in-95 duration-300">
         
-        {/* Header */}
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-6 px-2">
           <div>
-            <h2 className="text-xl font-extrabold text-brand-surface tracking-tight">
+            <h2 className="text-xl font-serif tracking-wide text-white/90">
               {exhibit.title || "Untitled"}
             </h2>
-            <p className="text-xs font-bold text-brand-surface/60 mt-0.5">3D Preview</p>
+            <p className="text-[10px] font-light tracking-widest text-white/50 uppercase mt-1">3D Preview</p>
           </div>
           <button 
             onClick={onClose} 
-            className="p-2 bg-white/10 rounded-full hover:bg-white/20 transition-colors"
+            className="p-2 rounded-full text-white/50 hover:text-white hover:bg-white/10 transition-colors"
           >
-            <X size={20} strokeWidth={2.5} />
+            <X size={24} strokeWidth={1.5} />
           </button>
         </div>
 
-        {/* 3D Canvas (PlayCanvas) */}
-        <div className="flex-1 bg-black/50 rounded-[2rem] border border-white/10 overflow-hidden relative shadow-2xl">
+        <div className="flex-1 bg-black/40 rounded-3xl border border-white/10 overflow-hidden relative shadow-2xl">
           <ExhibitPreview3D />
         </div>
 
-        {/* Footer Actions */}
-        <div className="mt-6 mb-4 flex justify-center pb-safe">
+        <div className="mt-8 mb-4 flex justify-center pb-safe">
           <button 
             onClick={() => onEdit(exhibit)}
-            className="flex items-center gap-2 px-8 py-3.5 bg-brand-primary text-white text-sm font-extrabold rounded-full shadow-[0_0_20px_rgba(0,194,214,0.4)] hover:bg-brand-primary-hover hover:-translate-y-0.5 active:scale-95 transition-all"
+            className="flex items-center gap-2 px-8 py-3.5 bg-white/10 border border-white/20 text-white text-xs font-light tracking-widest uppercase rounded-full hover:bg-white hover:text-black active:scale-95 transition-all"
           >
-            <Edit2 size={18} strokeWidth={2.5} />
-            編集ページへ移動する
+            <Edit2 size={14} strokeWidth={1.5} />
+            Edit Artwork
           </button>
         </div>
 

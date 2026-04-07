@@ -1,49 +1,52 @@
 import { useNavigate } from "react-router-dom";
-import { Box, Wand2, ShoppingCart } from "lucide-react";
+import { Library, Wand2, ShoppingBag } from "lucide-react";
 
 type Props = {
-  toyboxCount: number;
+  collectionCount: number;
   onOpenDrawer: () => void;
-  onOpenShop: () => void; // ★追加
+  onOpenShop: () => void;
 };
 
-export function RoomBottomNav({ toyboxCount, onOpenDrawer, onOpenShop }: Props) {
+export function RoomBottomNav({ collectionCount, onOpenDrawer, onOpenShop }: Props) {
   const navigate = useNavigate();
 
   return (
-    <div className="absolute bottom-8 left-0 right-0 z-20 flex justify-center pointer-events-none px-4">
-      <div className="pointer-events-auto flex items-center gap-6 bg-brand-text/85 backdrop-blur-xl p-3 px-6 rounded-[2.5rem] border border-white/20 shadow-glass">
+    <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 pointer-events-none w-full max-w-sm px-4">
+      <div className="pointer-events-auto flex items-center justify-between bg-white/10 backdrop-blur-2xl px-8 py-4 rounded-full border border-white/20 shadow-glass">
         
-        {/* おもちゃ箱 */}
         <button 
           onClick={onOpenDrawer}
-          className="flex flex-col items-center justify-center w-16 h-16 rounded-full hover:bg-white/10 text-white transition-colors relative group"
+          className="flex flex-col items-center justify-center gap-1.5 text-white/70 hover:text-white transition-colors relative w-16 group"
         >
-          <Box size={24} className="mb-1 text-brand-mint drop-shadow-[0_0_8px_rgba(45,212,191,0.8)] group-hover:scale-110 transition-transform" />
-          <span className="text-[10px] font-bold">おもちゃ箱</span>
-          {toyboxCount > 0 && (
-            <span className="absolute top-1 right-2 w-4 h-4 bg-brand-secondary rounded-full text-[9px] font-bold flex items-center justify-center shadow-md animate-bounce">
-              {toyboxCount}
+          <Library size={22} strokeWidth={1.5} className="group-hover:scale-110 transition-transform" />
+          <span className="text-[9px] font-light tracking-widest uppercase">Collection</span>
+          {collectionCount > 0 && (
+            <span className="absolute -top-1 -right-2 w-4 h-4 bg-brand-primary text-white rounded-full text-[9px] flex items-center justify-center shadow-md">
+              {collectionCount}
             </span>
           )}
         </button>
 
-        {/* 錬成 (Studio) */}
+        <div className="w-px h-8 bg-white/10" />
+
         <button 
           onClick={() => navigate('/app/studio')}
-          className="flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-tr from-brand-primary to-brand-mint shadow-[0_0_20px_rgba(0,194,214,0.6)] text-white -mt-10 hover:-translate-y-1 active:scale-90 transition-all border-4 border-brand-surface"
+          className="flex flex-col items-center justify-center gap-1.5 text-brand-primary hover:text-[#E5C158] transition-colors w-16 group"
         >
-          <Wand2 size={32} strokeWidth={2.5} />
+          <Wand2 size={24} strokeWidth={1.5} className="group-hover:scale-110 transition-transform" />
+          <span className="text-[9px] font-light tracking-widest uppercase">Studio</span>
         </button>
 
-        {/* 買う (Shop) */}
+        <div className="w-px h-8 bg-white/10" />
+
         <button 
           onClick={onOpenShop} 
-          className="flex flex-col items-center justify-center w-16 h-16 rounded-full hover:bg-white/10 text-white transition-colors group"
+          className="flex flex-col items-center justify-center gap-1.5 text-white/70 hover:text-white transition-colors w-16 group"
         >
-          <ShoppingCart size={22} className="mb-1 text-brand-secondary drop-shadow-[0_0_8px_rgba(255,122,89,0.8)] group-hover:scale-110 transition-transform" />
-          <span className="text-[10px] font-bold">買う</span>
+          <ShoppingBag size={22} strokeWidth={1.5} className="group-hover:scale-110 transition-transform" />
+          <span className="text-[9px] font-light tracking-widest uppercase">Order</span>
         </button>
+        
       </div>
     </div>
   );

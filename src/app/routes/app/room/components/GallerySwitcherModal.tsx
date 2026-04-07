@@ -18,7 +18,7 @@ export function GallerySwitcherModal({ open, onClose, galleries, selectedId, onS
   const createGallery = useCreateGallery();
   
   const[isCreating, setIsCreating] = useState(false);
-  const [newTitle, setNewTitle] = useState("");
+  const[newTitle, setNewTitle] = useState("");
 
   if (!open) return null;
 
@@ -26,34 +26,31 @@ export function GallerySwitcherModal({ open, onClose, galleries, selectedId, onS
     if (!newTitle.trim()) return;
     try {
       const created = await createGallery.mutateAsync({ title: newTitle.trim(), isPublic: false } as any);
-      if ((created as any)?.id) {
-        onSelect((created as any).id);
-      }
+      if ((created as any)?.id) onSelect((created as any).id);
       setIsCreating(false);
       setNewTitle("");
       onClose();
     } catch (e) {
-      console.error(e);
       alert("作成に失敗しました");
     }
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-brand-text/30 backdrop-blur-sm" onClick={onClose} />
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
       
-      <div className="relative w-full max-w-sm rounded-[2rem] border border-brand-border bg-brand-surface p-6 shadow-2xl animate-in zoom-in-95">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-extrabold text-brand-text flex items-center gap-2">
-            <Library size={20} className="text-brand-primary" />
-            祭壇をえらぶ
+      <div className="relative w-full max-w-sm rounded-3xl border border-brand-border bg-white shadow-2xl animate-in zoom-in-95 overflow-hidden flex flex-col max-h-[85vh]">
+        <div className="flex items-center justify-between p-6 border-b border-brand-border">
+          <h2 className="text-lg font-serif text-brand-text flex items-center gap-2 tracking-wide">
+            <Library size={18} strokeWidth={1.5} className="text-brand-primary" />
+            Exhibitions
           </h2>
-          <button onClick={onClose} className="p-2 rounded-full bg-brand-bg-soft text-brand-text-muted hover:text-brand-text">
-            <X size={20} />
+          <button onClick={onClose} className="p-2 -mr-2 rounded-full text-brand-text-muted hover:text-brand-text hover:bg-brand-bg-soft transition-colors">
+            <X size={20} strokeWidth={1.5} />
           </button>
         </div>
 
-        <div className="space-y-3 max-h-[40vh] overflow-y-auto custom-scrollbar pr-2 mb-6">
+        <div className="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-3">
           {galleries.map((g) => {
             const isSelected = g.id === selectedId;
             return (
@@ -62,64 +59,64 @@ export function GallerySwitcherModal({ open, onClose, galleries, selectedId, onS
                 className={cn(
                   "flex items-center justify-between p-4 rounded-2xl border transition-all cursor-pointer group",
                   isSelected 
-                    ? "border-brand-primary bg-brand-primary-soft/50 shadow-sm" 
-                    : "border-brand-border bg-brand-bg hover:border-brand-primary/50 hover:bg-brand-bg-soft"
+                    ? "border-brand-primary bg-brand-primary-soft shadow-sm" 
+                    : "border-brand-border bg-white hover:border-brand-primary/50"
                 )}
                 onClick={() => { onSelect(g.id); onClose(); }}
               >
                 <div className="flex flex-col">
-                  <span className={cn("text-sm font-extrabold", isSelected ? "text-brand-primary" : "text-brand-text")}>
+                  <span className={cn("text-sm font-serif tracking-wide", isSelected ? "text-brand-primary" : "text-brand-text")}>
                     {g.title || "Untitled"}
                   </span>
-                  <span className="text-[10px] text-brand-text-muted mt-0.5">
-                    {g.exhibits?.length || 0} アクスタ
+                  <span className="text-[10px] font-light tracking-widest uppercase text-brand-text-soft mt-1">
+                    {g.exhibits?.length || 0} Items
                   </span>
                 </div>
                 
-                {/* 歯車ボタン (Settingsへ) */}
                 <button 
                   onClick={(e) => { e.stopPropagation(); onClose(); onOpenSettings(g.id); }}
                   className="p-2 rounded-full text-brand-text-soft hover:text-brand-primary hover:bg-white transition-colors"
                 >
-                  <Settings2 size={18} />
+                  <Settings2 size={16} strokeWidth={1.5} />
                 </button>
               </div>
             );
           })}
         </div>
 
-        {/* ゲストは1つしか作れないため、ユーザー登録済みの場合のみ作成UIを表示 */}
-        {status === "authenticated" ? (
-          isCreating ? (
-            <div className="bg-brand-bg-soft p-4 rounded-2xl border border-brand-border">
-              <input
-                autoFocus
-                className="w-full bg-white rounded-xl border border-brand-border-strong px-4 py-2 text-sm font-bold text-brand-text focus:outline-none focus:border-brand-primary mb-3"
-                placeholder="新しい祭壇の名前..."
-                value={newTitle}
-                onChange={(e) => setNewTitle(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleCreate()}
-              />
-              <div className="flex gap-2 justify-end">
-                <button onClick={() => setIsCreating(false)} className="px-4 py-2 text-xs font-bold text-brand-text-muted">キャンセル</button>
-                <button onClick={handleCreate} disabled={!newTitle.trim() || createGallery.isPending} className="px-4 py-2 text-xs font-bold bg-brand-primary text-white rounded-full flex items-center gap-1">
-                  {createGallery.isPending ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />} 作る
-                </button>
+        <div className="p-6 border-t border-brand-border bg-brand-bg">
+          {status === "authenticated" ? (
+            isCreating ? (
+              <div className="bg-white p-4 rounded-2xl border border-brand-border">
+                <input
+                  autoFocus
+                  className="w-full bg-transparent border-b border-brand-border px-2 py-2 text-sm font-serif text-brand-text focus:outline-none focus:border-brand-primary mb-4"
+                  placeholder="Exhibition Name..."
+                  value={newTitle}
+                  onChange={(e) => setNewTitle(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleCreate()}
+                />
+                <div className="flex gap-2 justify-end">
+                  <button onClick={() => setIsCreating(false)} className="px-4 py-2 text-[10px] font-light tracking-widest uppercase text-brand-text-muted hover:text-brand-text transition-colors">Cancel</button>
+                  <button onClick={handleCreate} disabled={!newTitle.trim() || createGallery.isPending} className="px-5 py-2 text-[10px] font-light tracking-widest uppercase bg-brand-secondary text-white rounded-full flex items-center gap-1.5 hover:bg-black transition-colors disabled:opacity-50">
+                    {createGallery.isPending ? <Loader2 size={12} strokeWidth={1.5} className="animate-spin" /> : <Plus size={12} strokeWidth={1.5} />} Create
+                  </button>
+                </div>
               </div>
-            </div>
+            ) : (
+              <button 
+                onClick={() => setIsCreating(true)}
+                className="w-full flex items-center justify-center gap-2 p-4 rounded-2xl border border-dashed border-brand-border-strong text-brand-text-muted hover:text-brand-primary hover:border-brand-primary transition-all text-xs font-light tracking-widest uppercase"
+              >
+                <Plus size={16} strokeWidth={1.5} /> New Exhibition
+              </button>
+            )
           ) : (
-            <button 
-              onClick={() => setIsCreating(true)}
-              className="w-full flex items-center justify-center gap-2 p-4 rounded-2xl border-2 border-dashed border-brand-mint text-brand-mint font-extrabold text-sm hover:bg-brand-mint/10 transition-colors"
-            >
-              <Plus size={18} /> 新しい祭壇を作る
-            </button>
-          )
-        ) : (
-          <div className="text-center text-xs font-bold text-brand-text-muted bg-brand-bg-soft p-3 rounded-xl border border-brand-border-strong">
-            さらに祭壇を作るにはログインが必要です✨
-          </div>
-        )}
+            <div className="text-center text-[10px] font-light tracking-widest uppercase text-brand-text-soft">
+              Sign in to create more exhibitions.
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

@@ -1,61 +1,58 @@
 /** @type {import('tailwindcss').Config} */
 export default {
-  content: [
+  content:[
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
     extend: {
       colors: {
-
         brand: {
+          // 洗練されたシャンパンゴールド/ブロンズ系
+          primary: "#C5A880",
+          "primary-hover": "#B0926A",
+          "primary-soft": "#F9F6F0",
 
-          primary: "#00C2D6",
-          "primary-hover": "#00A8BA",
-          "primary-soft": "#E6FAFD",
+          // 上品なダークチャコール
+          secondary: "#2C2A29",
 
-          secondary: "#FF7A59",
+          accent: "#D9C5B2",
+          mint: "#8EAEB4",
 
-          accent: "#A78BFA",
-
-          mint: "#2DD4BF",
-
-          bg: "#FAFEFF",
-          "bg-soft": "#F2FBFD",
+          // 温かみのあるオフホワイト基調
+          bg: "#FAF9F6",
+          "bg-soft": "#F2F0EB",
 
           surface: "#FFFFFF",
 
-          text: "#1F2937",
-          "text-muted": "#6B7280",
-          "text-soft": "#9CA3AF",
+          // テキストカラーも真っ黒を避ける
+          text: "#1C1C1E",
+          "text-muted": "#736F68",
+          "text-soft": "#A6A29C",
 
-          border: "#E5F3F7",
-          "border-strong": "#CFE8EF",
+          // 細く上品なボーダー
+          border: "#E8E6E1",
+          "border-strong": "#D1CCC2",
         },
         y2k: {
-          pink: "#FF7EB3",
-          purple: "#A87FFB",
-          mint: "#5EEAD4",
-          blue: "#7DD3FC",
-          // グラスモーフィズム用
-          glass: "rgba(255, 255, 255, 0.2)",
-          glassDark: "rgba(0, 0, 0, 0.3)",
+          pink: "#E8B4B8",
+          purple: "#BCA3C4",
+          mint: "#A3C4BC",
+          blue: "#A3B8C4",
+          glass: "rgba(255, 255, 255, 0.15)",
+          glassDark: "rgba(0, 0, 0, 0.4)",
         }
       },
-      backgroundImage: {
-        'holo-gradient': 'linear-gradient(135deg, #FF7EB3 0%, #A87FFB 50%, #5EEAD4 100%)',
+      fontFamily: {
+        sans:['"Helvetica Neue"', 'Arial', '"Hiragino Kaku Gothic ProN"', '"Hiragino Sans"', 'Meiryo', 'sans-serif'],
+        serif:['"Playfair Display"', '"Noto Serif JP"', 'Mincho', 'serif'],
       },
       boxShadow: {
-        'neon-pink': '0 0 15px rgba(255, 126, 179, 0.6)',
-        'neon-blue': '0 0 15px rgba(0, 194, 214, 0.6)',
-        'glass': '0 8px 32px 0 rgba(31, 38, 135, 0.15)',
+        'glass': '0 8px 32px 0 rgba(0, 0, 0, 0.08)',
         'glass-inset': 'inset 0 0 0 1px rgba(255, 255, 255, 0.4)',
+        'elegant': '0 10px 40px -10px rgba(0,0,0,0.08)',
       }
-    
-
     }
-
   },
-
-  plugins: [],
+  plugins:[],
 }

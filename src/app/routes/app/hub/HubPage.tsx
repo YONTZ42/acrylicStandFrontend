@@ -1,6 +1,6 @@
 // src/app/routes/app/hub/HubPage.tsx
 import { Link } from "react-router-dom";
-import { Compass, Sparkles, ChevronLeft, Hammer } from "lucide-react";
+import { Compass, ChevronLeft, Hammer } from "lucide-react";
 
 export function HubPage() {
   return (

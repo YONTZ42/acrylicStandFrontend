@@ -8,7 +8,7 @@ const REMBG_BIREFNET_URL = import.meta.env.VITE_REMBG_BIREFNET_FUNCTION_URL || "
 const REMBG_ANIME_URL = import.meta.env.VITE_REMBG_ANIME_FUNCTION_URL || "";
 const GEMINI_GEN_URL = import.meta.env.VITE_GEMINI_GEN_FUNCTION_URL || "";
 
-// --- Types ---
+// --- Types --- 
 export type RembgModel = "isnet-general-use" | "birefnet-general-lite" | "isnet-anime";
 
 // Lambdaレスポンス型（共通: 画像URLが返ってくる想定）
@@ -102,7 +102,7 @@ export async function runRembg(
   // Lambda実行
   const res = await invokeLambda<ImageUrlResponse>(functionUrl, payload);
   
-  const resultUrl = res.url || res.processedUrl;
+const resultUrl = res.url || res.processedUrl || res.processed_url;
   if (!resultUrl) {
     throw new Error(res.error || "Nooo image URL returned from Rembg Lambda");
   }
@@ -137,7 +137,7 @@ export async function runGemini(
   // Lambda実行
   const res = await invokeLambda<ImageUrlResponse>(GEMINI_GEN_URL, payload);
 
-  const resultUrl = res.url || res.processedUrl || res.processed_url;
+const resultUrl = res.url || res.processedUrl || res.processed_url;
   if (!resultUrl) {
     throw new Error(res.error || "No image URL returned from Gemini Lambda");
   }

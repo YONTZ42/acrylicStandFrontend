@@ -24,6 +24,31 @@ type UploadConfirmRes = {
   publicUrl?: string;
 };
 
+function getExtensionFromMimeType(mimeType: string): string {
+  switch (mimeType) {
+    case "image/png":
+      return "png";
+    case "image/jpeg":
+      return "jpg";
+    case "image/webp":
+      return "webp";
+    case "image/gif":
+      return "gif";
+    default:
+      return "bin";
+  }
+}
+
+function normalizeImageMimeType(blob: Blob): string {
+  const mimeType = blob.type?.trim();
+
+  if (mimeType && mimeType.startsWith("image/")) {
+    return mimeType;
+  }
+
+  throw new Error(`Unsupported or missing blob.type: "${blob.type || ""}"`);
+}
+
 async function putToS3(uploadUrl: string, blob: Blob, mimeType: string) {
   const res = await fetch(uploadUrl, {
     method: "PUT",
@@ -47,8 +72,9 @@ export function useExhibitImageUpload() {
     setError(null);
 
     try {
-      const filename = "exhibit.png";
-      const mimeType = blob.type || "image/png";
+      const mimeType = normalizeImageMimeType(blob);
+      const extension = getExtensionFromMimeType(mimeType);
+      const filename = `exhibit.${extension}`;
       const purpose: UploadIssueReq["purpose"] = "exhibit_image";
 
       const issueBody: UploadIssueReq = {

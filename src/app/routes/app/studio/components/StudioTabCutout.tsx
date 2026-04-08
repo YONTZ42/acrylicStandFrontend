@@ -95,7 +95,7 @@ export function StudioTabCutout({ onStartProcess, onEndProcess }: Props) {
         </h3>
         <div className="flex gap-4 overflow-x-auto pb-4 custom-scrollbar">
           <button 
-            onClick={() => handleAIStyle("Based on the provided image of the person, remove the original background completely and output a precise cutout of the person. The final output must be against a transparent background (alpha channel), showcasing only the person and the added text elements. The text that suits to the person  is hand-written in a charcoal-colored, raw brush-script font, and arranged in a perfect arc curve over the person's head, creating a halo effect. 背景透過RGBA形式で。", "Anime")}
+            onClick={() => handleAIStyle("Based on the provided image of the person or the object, remove the original background completely and output a precise cutout of the person or the object. The final output must be against a transparent background (alpha channel, RGBA), showcasing only the person and the added text elements. The text that suits to the person  is hand-written in a charcoal-colored, raw brush-script font, and arranged in a perfect arc curve over the person's head, creating a halo effect. ", "Anime")}
             className="flex-shrink-0 w-32 aspect-square rounded-2xl border border-brand-border bg-white flex flex-col items-center justify-center gap-3 hover:border-brand-primary hover:bg-brand-primary-soft transition-all active:scale-95 shadow-sm group"
           >
             <ImageIcon size={24} strokeWidth={1} className="text-brand-text-soft group-hover:text-brand-primary" />

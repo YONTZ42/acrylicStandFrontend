@@ -5,7 +5,7 @@ import { X, ImagePlus } from "lucide-react";
 type Props = {
   isOpen: boolean;
   onClose: () => void;
-  exhibits: any[]; // altarExhibits (長さ12の配列)
+  exhibits: any[]; 
   onNavigateToStudio: () => void;
   onPreview: (ex: any) => void;
 };
@@ -22,24 +22,25 @@ export function RoomDrawer({
           <motion.div 
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             onClick={onClose}
-            className="absolute inset-0 z-30 bg-black/40 backdrop-blur-sm"
+            className="absolute inset-0 z-[60] bg-black/40 backdrop-blur-sm"
           />
           
           <motion.div
             initial={{ y: "100%" }} animate={{ y: "0%" }} exit={{ y: "100%" }}
             transition={{ type: "spring", damping: 28, stiffness: 220 }}
-            className="absolute bottom-0 left-0 right-0 z-40 h-[85vh] bg-brand-bg border-t border-brand-border rounded-t-3xl flex flex-col shadow-elegant"
+            className="absolute bottom-0 left-0 right-0 z-[70] h-[85%] bg-brand-bg border-t border-brand-border rounded-t-3xl flex flex-col shadow-elegant"
           >
-            <div className="flex justify-between items-center px-6 py-5 border-b border-brand-border/60 bg-white/50 rounded-t-3xl backdrop-blur-md shrink-0">
+            <div className="flex justify-between items-center px-6 py-4 border-b border-brand-border/60 bg-white/50 rounded-t-3xl backdrop-blur-md shrink-0">
               <div>
                 <h2 className="text-xl font-serif text-brand-text tracking-wide">Exhibition</h2>
                 <p className="text-[11px] font-light tracking-wider text-brand-text-muted mt-1 uppercase">タップで詳細を確認</p>
               </div>
+              
               <button 
                 onClick={onClose} 
-                className="p-2 rounded-full text-brand-text-muted hover:text-brand-text hover:bg-brand-bg-soft transition-colors"
+                className="p-2.5 rounded-full bg-brand-text/5 text-brand-text/70 hover:bg-brand-text/10 hover:text-brand-text transition-colors"
               >
-                <X size={24} strokeWidth={1.5} />
+                <X size={24} strokeWidth={2} />
               </button>
             </div>
 
@@ -52,8 +53,6 @@ export function RoomDrawer({
                 </div>
                 
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                  
-                  {/* 新規作成ボタンを常に表示 */}
                   {activeCount < 12 && (
                     <div 
                       onClick={onNavigateToStudio}
@@ -64,7 +63,6 @@ export function RoomDrawer({
                     </div>
                   )}
 
-                  {/* 有効なアクスタだけ描画 */}
                   {exhibits.map((ex, idx) => {
                     if (!ex) return null;
                     return (
@@ -81,7 +79,6 @@ export function RoomDrawer({
                       </div>
                     );
                   })}
-                  
                 </div>
               </div>
             </div>

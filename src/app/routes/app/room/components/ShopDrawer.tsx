@@ -1,3 +1,4 @@
+// src/app/routes/app/room/components/ShopDrawer.tsx
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, ShoppingBag, Plus, Minus, Check, Trash2, ChevronDown } from "lucide-react";
@@ -59,29 +60,31 @@ export function ShopDrawer({ isOpen, onClose, exhibits, onProceedToCheckout }: P
           <motion.div 
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             onClick={onClose}
-            className="absolute inset-0 z-30 bg-black/40 backdrop-blur-sm"
+            className="absolute inset-0 z-[60] bg-black/40 backdrop-blur-sm"
           />
           
           <motion.div
             initial={{ y: "100%" }} animate={{ y: "0%" }} exit={{ y: "100%" }}
             transition={{ type: "spring", damping: 28, stiffness: 220 }}
-            className="absolute bottom-0 left-0 right-0 z-40 h-[90vh] sm:h-[85vh] bg-brand-bg border-t border-brand-border rounded-t-3xl flex flex-col shadow-elegant"
+            className="absolute bottom-0 left-0 right-0 z-[70] h-[90%] sm:h-[85%] bg-brand-bg border-t border-brand-border rounded-t-3xl flex flex-col shadow-elegant"
           >
-            {/* ヘッダー (固定) */}
-            <div className="flex justify-between items-center px-6 py-5 border-b border-brand-border/60 bg-white/50 rounded-t-3xl backdrop-blur-md">
+            <div className="flex justify-between items-center px-6 py-4 border-b border-brand-border/60 bg-white/50 rounded-t-3xl backdrop-blur-md shrink-0">
               <div>
                 <h2 className="text-xl font-serif text-brand-text tracking-wide flex items-center gap-2">
                   Order
                 </h2>
                 <p className="text-[11px] font-light tracking-wider text-brand-text-muted mt-1 uppercase">実物のアクスタを注文</p>
               </div>
-              <button onClick={onClose} className="p-2 rounded-full text-brand-text-muted hover:text-brand-text hover:bg-brand-bg-soft transition-colors">
-                <X size={24} strokeWidth={1.5} />
+              
+              <button 
+                onClick={onClose} 
+                className="p-2.5 rounded-full bg-brand-text/5 text-brand-text/70 hover:bg-brand-text/10 hover:text-brand-text transition-colors"
+              >
+                <X size={24} strokeWidth={2} />
               </button>
             </div>
 
-            {/* スクロールエリア */}
-            <div className="flex-1 overflow-y-auto custom-scrollbar px-4 sm:px-6 py-8 space-y-10 relative">
+            <div className="flex-1 overflow-y-auto custom-scrollbar px-4 sm:px-6 py-8 space-y-10 relative min-h-0">
               
               <section>
                 <h3 className="text-xs font-light tracking-widest text-brand-text-muted mb-4 uppercase border-b border-brand-border pb-2">
@@ -202,8 +205,7 @@ export function ShopDrawer({ isOpen, onClose, exhibits, onProceedToCheckout }: P
               </section>
             </div>
 
-            {/* フッター (固定) */}
-            <div className="p-6 border-t border-brand-border bg-white pb-safe">
+            <div className="p-6 border-t border-brand-border bg-white pb-safe shrink-0">
               <div className="flex items-center justify-between mb-5 px-1">
                 <span className="font-light tracking-widest text-xs uppercase text-brand-text-muted flex items-center gap-2">
                   Total <span className="bg-brand-bg border border-brand-border text-[9px] px-2 py-0.5 rounded-full">{cartItems.length} items</span>

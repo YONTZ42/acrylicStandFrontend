@@ -1,5 +1,3 @@
-// src/shared/utils/imageProcessingFromLambda.ts
-
 import { invokeLambda } from "./lambdaClient";
 
 // --- 環境変数 ---
@@ -8,7 +6,7 @@ const REMBG_BIREFNET_URL = import.meta.env.VITE_REMBG_BIREFNET_FUNCTION_URL || "
 const REMBG_ANIME_URL = import.meta.env.VITE_REMBG_ANIME_FUNCTION_URL || "";
 const GEMINI_GEN_URL = import.meta.env.VITE_GEMINI_GEN_FUNCTION_URL || "";
 
-// --- Types --- 
+// --- Types ---
 export type RembgModel = "isnet-general-use" | "birefnet-general-lite" | "isnet-anime";
 
 // Lambdaレスポンス型（共通: 画像URLが返ってくる想定）
@@ -17,12 +15,11 @@ type ImageUrlResponse = {
   url?: string;
   processedUrl?: string; // 表記ゆれ吸収用
   processed_url?: string; // 表記ゆれ吸収用
-
   error?: string;
 };
 
 // --- Constants ---
-const SIZE_THRESHOLD = 1 * 1024 * 1024; // 4.5MB
+const SIZE_THRESHOLD = 1 * 1024 * 1024; // 1MB
 
 // --- Helpers ---
 
@@ -46,9 +43,100 @@ async function urlToBlob(url: string): Promise<Blob> {
   return await res.blob();
 }
 
+function canvasToBlob(
+  canvas: HTMLCanvasElement,
+  type: string,
+  quality?: number
+): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    canvas.toBlob(
+      (blob) => {
+        if (!blob) {
+          reject(new Error(`Failed to encode canvas as ${type}`));
+          return;
+        }
+        resolve(blob);
+      },
+      type,
+      quality
+    );
+  });
+}
+
+/**
+ * 1MB超の画像を、アップロード前に 1MB 以下へ圧縮する。
+ * - まず WebP を優先
+ * - だめなら JPEG も試す
+ * - quality と scale を段階的に落としていく
+ */
+async function compressBlobUnderThreshold(
+  blob: Blob,
+  maxBytes: number = SIZE_THRESHOLD
+): Promise<Blob> {
+  if (blob.size <= maxBytes) {
+    return blob;
+  }
+
+  const bitmap = await createImageBitmap(blob);
+  try {
+    const originalWidth = bitmap.width;
+    const originalHeight = bitmap.height;
+
+    const scales = [1, 0.92, 0.84, 0.76, 0.68, 0.6, 0.52, 0.44, 0.36, 0.28];
+    const qualities = [0.92, 0.86, 0.8, 0.72, 0.64, 0.56, 0.48, 0.4, 0.32];
+    const mimeCandidates = ["image/webp", "image/jpeg"];
+
+    let bestCandidate: Blob | null = null;
+
+    for (const mimeType of mimeCandidates) {
+      for (const scale of scales) {
+        const width = Math.max(1, Math.round(originalWidth * scale));
+        const height = Math.max(1, Math.round(originalHeight * scale));
+
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+
+        const ctx = canvas.getContext("2d");
+        if (!ctx) {
+          throw new Error("Failed to get 2D canvas context");
+        }
+
+        ctx.clearRect(0, 0, width, height);
+        ctx.drawImage(bitmap, 0, 0, width, height);
+
+        for (const quality of qualities) {
+          const compressed = await canvasToBlob(canvas, mimeType, quality);
+
+          if (!bestCandidate || compressed.size < bestCandidate.size) {
+            bestCandidate = compressed;
+          }
+
+          if (compressed.size <= maxBytes) {
+            console.log(
+              `[imageProcessingFromLambda] compressed ${blob.size} -> ${compressed.size} bytes (${mimeType}, q=${quality}, scale=${scale})`
+            );
+            return compressed;
+          }
+        }
+      }
+    }
+
+    if (bestCandidate && bestCandidate.size <= maxBytes) {
+      return bestCandidate;
+    }
+
+    throw new Error(
+      `Failed to compress image under ${maxBytes} bytes. Best effort size: ${bestCandidate?.size ?? "unknown"}`
+    );
+  } finally {
+    bitmap.close();
+  }
+}
+
 /**
  * 汎用ペイロードビルダー
- * - 4.5MB超ならS3アップロード (uploader使用)
+ * - 1MB超なら、まず 1MB 以下へ圧縮してから S3アップロード (uploader使用)
  * - 以下ならBase64化
  */
 async function buildImagePayload(
@@ -58,15 +146,16 @@ async function buildImagePayload(
   if (!blob) return {};
 
   if (blob.size > SIZE_THRESHOLD && uploader) {
-    console.log("Image too large, uploading to S3...");
-    const url = await uploader(blob);
+    console.log("Image too large, compressing before S3 upload...");
+    const compressedBlob = await compressBlobUnderThreshold(blob, SIZE_THRESHOLD);
+    const url = await uploader(compressedBlob);
     return { image_url: url };
   } else {
     const b64 = await blobToBase64(blob);
     // lambdaClient側でプレフィックス除去するためそのまま渡す
     return { image_data: b64 };
   }
-} 
+}
 
 /**
  * Rembgによる背景削除
@@ -101,8 +190,8 @@ export async function runRembg(
 
   // Lambda実行
   const res = await invokeLambda<ImageUrlResponse>(functionUrl, payload);
-  
-const resultUrl = res.url || res.processedUrl || res.processed_url;
+
+  const resultUrl = res.url || res.processedUrl || res.processed_url;
   if (!resultUrl) {
     throw new Error(res.error || "Nooo image URL returned from Rembg Lambda");
   }
@@ -130,14 +219,14 @@ export async function runGemini(
   const imagePayload = refBlob ? await buildImagePayload(refBlob, uploader) : {};
 
   const payload = {
-    prompt: prompt,
+    prompt,
     ...imagePayload,
   };
 
   // Lambda実行
   const res = await invokeLambda<ImageUrlResponse>(GEMINI_GEN_URL, payload);
 
-const resultUrl = res.url || res.processedUrl || res.processed_url;
+  const resultUrl = res.url || res.processedUrl || res.processed_url;
   if (!resultUrl) {
     throw new Error(res.error || "No image URL returned from Gemini Lambda");
   }

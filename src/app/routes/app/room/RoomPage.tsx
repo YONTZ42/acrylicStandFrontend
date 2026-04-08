@@ -64,20 +64,20 @@ export function RoomPage() {
         <GalleryDetailPreview3D slots={altarExhibits} isPaused={false} />
       </div>
 
-      <div className="absolute top-4 sm:top-6 left-4 right-4 z-10 flex justify-between items-center pointer-events-none">
+      <div className="absolute top-4 sm:top-1 left-4 right-4 z-10 flex justify-between items-center pointer-events-none">
         <button 
           onClick={() => setSwitcherOpen(true)}
-          className="pointer-events-auto bg-white/10 backdrop-blur-xl px-6 py-3 rounded-full border border-white/20 shadow-glass flex items-center gap-3 hover:bg-white/20 transition-all group active:scale-95"
+          className="pointer-events-auto bg-white/10 backdrop-blur-xl px-2 sm:px-6 py-1 sm:py-1 rounded-full border border-white/20 shadow-glass flex items-center gap-3 hover:bg-white/20 transition-all group active:scale-95"
         >
           <h1 className="text-white font-serif tracking-widest text-sm drop-shadow-sm truncate max-w-[150px] sm:max-w-[200px]">
             {galleryTitle}
           </h1>
-          <ChevronDown size={14} strokeWidth={1.5} className="text-white/70 group-hover:translate-y-0.5 transition-transform" />
+          <ChevronDown size={16} strokeWidth={3} className="text-white/70 group-hover:translate-y-0.5 transition-transform" />
         </button>
 
         <button 
           onClick={() => setSettingsGalleryId(selectedGalleryId)}
-          className="pointer-events-auto bg-white/10 backdrop-blur-xl border border-white/20 text-white p-3.5 rounded-full shadow-glass hover:bg-white/20 hover:scale-105 active:scale-95 transition-all"
+          className="pointer-events-auto px-4 sm:px-5 py-4 sm:py-5 bg-white/10 backdrop-blur-xl border border-white/20 text-white p-3.5 rounded-full shadow-glass hover:bg-white/20 hover:scale-105 active:scale-95 transition-all"
         >
           <Share size={18} strokeWidth={1.5} />
         </button>

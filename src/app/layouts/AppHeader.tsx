@@ -7,7 +7,7 @@ export function AppHeader() {
   const isGuest = status === "guest";
 
   return (
-    <header className="sticky top-0 z-50 flex h-16 items-center justify-between border-b border-brand-border bg-white/90 px-4 sm:px-6 backdrop-blur-md shadow-sm">
+    <header className="sticky top-0 z-50 flex h-11 sm:h-16 items-center justify-between border-b border-brand-border bg-white/90 px-6 sm:px-3 backdrop-blur-md shadow-sm">
       
       {/* ロゴエリア */}
       <Link to="/app/room" className="flex items-center gap-3 hover:opacity-80 active:scale-95 transition-all">
@@ -33,7 +33,7 @@ export function AppHeader() {
               {isGuest ? "Sign In" : (user?.email || "My Account")}
             </span>
           </div>
-          <div className="w-8 h-8 rounded-full bg-white text-brand-text-muted border border-brand-border flex items-center justify-center shadow-sm">
+          <div className="w-8 h-6 sm:h-3 rounded-full bg-white text-brand-text-muted border border-brand-border flex items-center justify-center shadow-sm">
             <UserCircle size={18} strokeWidth={1.5} />
           </div>
         </Link>

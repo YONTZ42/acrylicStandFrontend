@@ -186,7 +186,7 @@ export function LandingPage() {
     setIsNavigating(true);
     try {
       await ensureGuestId();
-      navigate("/app/studio");
+      navigate("/app/room");
     } catch (e) {
       console.error("Failed to ensure guest session:", e);
       setIsNavigating(false);

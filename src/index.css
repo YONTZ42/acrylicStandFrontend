@@ -2,3 +2,12 @@
 @import "tailwindcss";
 
 @config "../tailwind.config.js";
+
+@import url('https://fonts.googleapis.com/css2?family=Dela+Gothic+One&display=swap');
+
+@layer utilities {
+  /* 2. テキストの白フチ用カスタムユーティリティ */
+  .text-stroke-white {
+    -webkit-text-stroke: 2px #FFFFFF;
+  }
+}

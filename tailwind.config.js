@@ -46,6 +46,8 @@ export default {
       fontFamily: {
         sans:['"Helvetica Neue"', 'Arial', '"Hiragino Kaku Gothic ProN"', '"Hiragino Sans"', 'Meiryo', 'sans-serif'],
         serif:['"Playfair Display"', '"Noto Serif JP"', 'Mincho', 'serif'],
+        dela:['"Dela Gothic One"', 'cursive', 'sans-serif'],
+
       },
       boxShadow: {
         'glass': '0 8px 32px 0 rgba(0, 0, 0, 0.08)',

@@ -108,16 +108,16 @@ const Interactive3DHero = ({ onStartCreate }: { onStartCreate: () => void }) => 
            {/* タッチして操作 */}
            <button 
              onClick={() => setIsInteractive(true)}
-             className="bg-white/90 backdrop-blur-sm px-8 py-3.5 rounded-full shadow-lg border border-brand-border text-brand-text font-serif tracking-widest text-[11px] flex items-center gap-3 hover:bg-brand-primary hover:text-white hover:border-brand-primary transition-all duration-300 transform hover:scale-105"
+             className="bg-white/90 backdrop-blur-sm px-8 py-3.5 rounded-full shadow-lg border border-brand-border text-brand-text font-serif tracking-widest text-[16px] flex items-center gap-3 hover:bg-brand-primary hover:text-white hover:border-brand-primary transition-all duration-300 transform hover:scale-105"
            >
              <MousePointer2 size={16} strokeWidth={1.5} />
-             TOUCH TO INTERACT 3D
+             3Dを触る
            </button>
            
            {/* 画像をアップロードして試す */}
-           <label className="bg-brand-secondary/90 text-white backdrop-blur-sm px-8 py-3.5 rounded-full shadow-lg border border-brand-secondary font-serif tracking-widest text-[11px] flex items-center gap-3 hover:bg-black transition-all duration-300 transform hover:scale-105 cursor-pointer">
+           <label className="bg-brand-secondary/90 text-white backdrop-blur-sm px-8 py-3.5 rounded-full shadow-lg border border-brand-secondary font-serif tracking-widest text-[16px] flex items-center gap-3 hover:bg-black transition-all duration-300 transform hover:scale-105 cursor-pointer">
              <UploadCloud size={16} strokeWidth={1.5} />
-             UPLOAD YOUR IMAGE
+             アクスタ試作
              <input type="file" accept="image/*" className="hidden" ref={fileInputRef} onChange={handleFileUpload} />
            </label>
         </div>
@@ -231,11 +231,11 @@ export function LandingPage() {
               </Link>
 
               <button 
-                onClick={handleStartCreate}
+                onClick={() => navigate("/login")}
                 disabled={isNavigating}
                 className="px-6 py-2.5 rounded-full text-[11px] font-light tracking-widest uppercase bg-brand-secondary text-white hover:bg-black transition-all shadow-md disabled:opacity-50 flex items-center gap-2"
               >
-                {isNavigating ? "Loading..." : "Try for Free"}
+                {isNavigating ? "Loading..." : "ログイン / 登録"}
               </button>
             </>
           )}
@@ -270,7 +270,7 @@ export function LandingPage() {
                 disabled={isNavigating}
                 className="px-8 py-4 rounded-full font-light text-sm tracking-widest uppercase text-white bg-brand-primary hover:bg-brand-primary-hover active:scale-95 transition-all shadow-md inline-flex items-center justify-center gap-3 w-full sm:w-auto"
               >
-                {isNavigating ? "Entering Studio..." : "Experience for free"}
+                {isNavigating ? "Entering Studio..." : "爆速アクスタシミュレーション"}
                 {!isNavigating && <ArrowRight size={16} strokeWidth={1.5} />}
               </button>
             </div>
@@ -427,7 +427,7 @@ export function LandingPage() {
                 disabled={isNavigating}
                 className="w-full sm:w-auto px-10 py-4 rounded-full font-light text-sm tracking-widest uppercase text-white bg-brand-secondary hover:bg-black active:scale-95 transition-all shadow-md inline-flex items-center justify-center gap-3"
               >
-                {isNavigating ? "Loading..." : "Try for Free"}
+                {isNavigating ? "Loading..." : "ゲストログイン"}
                 {!isNavigating && <Wand2 size={16} strokeWidth={1.5} />}
               </button>
 

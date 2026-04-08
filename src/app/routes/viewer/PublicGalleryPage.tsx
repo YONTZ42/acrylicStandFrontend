@@ -11,7 +11,6 @@ import { GalleryDetailPreview3D } from "@/features/exhibits/components/playcanva
 // 3Dプレビュー用のフックとコンポーネントを追加
 import { useExhibitEditorStore, EditorStoreContext } from "@/features/exhibits/hooks/useExhibitEditorStore";
 import { ExhibitPreview3D } from "@/features/exhibits/components/ExhibitEditorModal/ExhibitPreview3D";
-import { AppHeader } from "@/app/layouts/AppHeader";
 
 type ExhibitPublic = components["schemas"]["ExhibitPublic"];
 

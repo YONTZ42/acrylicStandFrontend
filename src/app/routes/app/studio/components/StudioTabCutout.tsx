@@ -11,8 +11,6 @@ type Props = {
   onEndProcess: () => void;
 };
 
-const promptAddText = "Everskiesスタイルの全身ピクセルアートイラストを作成してください。人物の体型、顔の表情、服装とヘアスタイルの表現方法を模倣してください。添付画像の人物の髪型、服装、アクセサリーを参考にして、白い背景に全身のイラストを描いてください。ピクセルアート風のドット絵スタイルで、ゲームキャラクターのような可愛らしい仕上がりにしてください。背景は透過で。RGBA形式で出力して"
-const promptPixelArt = "Everskiesスタイルの全身ピクセルアートイラストを作成してください。人物の体型、顔の表情、服装とヘアスタイルの表現方法を模倣してください。添付画像の人物の髪型、服装、アクセサリーを参考にして、白い背景に全身のイラストを描いてください。ピクセルアート風のドット絵スタイルで、ゲームキャラクターのような可愛らしい仕上がりにしてください。背景は透過で。RGBA形式で出力して。"
 const REMBG_MODELS: { id: RembgModel; name: string; desc: string }[] =[
   { id: "isnet-general-use", name: "Standard", desc: "Fast & reliable" },
   { id: "birefnet-general-lite", name: "High Quality", desc: "Best precision" },
@@ -97,14 +95,14 @@ export function StudioTabCutout({ onStartProcess, onEndProcess }: Props) {
         </h3>
         <div className="flex gap-4 overflow-x-auto pb-4 custom-scrollbar">
           <button 
-            onClick={() => handleAIStyle(promptAddText, "Anime")}
+            onClick={() => handleAIStyle("Based on the provided image of the person, remove the original background completely and output a precise cutout of the person. The final output must be against a transparent background (alpha channel), showcasing only the person and the added text elements. The text that suits to the person  is hand-written in a charcoal-colored, raw brush-script font, and arranged in a perfect arc curve over the person's head, creating a halo effect. 背景透過RGBA形式で。", "Anime")}
             className="flex-shrink-0 w-32 aspect-square rounded-2xl border border-brand-border bg-white flex flex-col items-center justify-center gap-3 hover:border-brand-primary hover:bg-brand-primary-soft transition-all active:scale-95 shadow-sm group"
           >
             <ImageIcon size={24} strokeWidth={1} className="text-brand-text-soft group-hover:text-brand-primary" />
             <span className="text-[10px] font-light tracking-widest uppercase text-brand-text">Anime Style</span>
           </button>
           <button 
-            onClick={() => handleAIStyle(promptPixelArt, "Pixel")}
+            onClick={() => handleAIStyle("Everskiesスタイルの全身ピクセルアートイラストを作成してください。人物の体型、顔の表情、服装とヘアスタイルの表現方法を模倣してください。添付画像の人物の髪型、服装、アクセサリーを参考にして、白い背景に全身のイラストを描いてください。ピクセルアート風のドット絵スタイルで、ゲームキャラクターのような可愛らしい仕上がりにしてください。背景透過RGBA形式で。", "Pixel")}
             className="flex-shrink-0 w-32 aspect-square rounded-2xl border border-brand-border bg-white flex flex-col items-center justify-center gap-3 hover:border-brand-primary hover:bg-brand-primary-soft transition-all active:scale-95 shadow-sm group"
           >
             <LayoutGrid size={24} strokeWidth={1} className="text-brand-text-soft group-hover:text-brand-primary" />

@@ -45,13 +45,9 @@ export function RoomPage() {
     return (t && String(t).trim().length > 0 ? String(t) : "Untitled Exhibition");
   },[detailQuery.data]);
 
-  // 0〜11スロット（祭壇用）の正規化リスト
+  // ★ 0〜11の有効なスロットのみ使用
   const altarExhibits = detailQuery.normalizedExhibits ?? new Array(12).fill(null);
-
-  // Shopなどに渡すための存在する全Exhibit（0〜11の有効なもののみ）
-  const allAvailableExhibits = useMemo(() => {
-    return altarExhibits.filter(e => e);
-  }, [altarExhibits]);
+  const validExhibits = useMemo(() => altarExhibits.filter(e => e), [altarExhibits]);
 
   if (galleriesQuery.isLoading) {
     return (
@@ -64,7 +60,7 @@ export function RoomPage() {
 
   return (
     <div className="absolute inset-0 w-full h-full bg-[#050506] overflow-hidden font-sans select-none">
-      <div className="absolute inset-0 z-0 bg-[#050506]">
+      <div className="absolute inset-0 z-0">
         <GalleryDetailPreview3D slots={altarExhibits} isPaused={false} />
       </div>
 
@@ -87,32 +83,26 @@ export function RoomPage() {
         </button>
       </div>
 
+      {/* ボトムナビ: collectionCountは0または互換のためダミーを渡す */}
       <RoomBottomNav 
         collectionCount={0} 
         onOpenDrawer={() => setIsDrawerOpen(true)} 
         onOpenShop={() => setIsShopOpen(true)}
       />
 
+      {/* ★ Drawerには純粋に表示用として渡す */}
       <RoomDrawer
         isOpen={isDrawerOpen}
         onClose={() => setIsDrawerOpen(false)}
-        altarExhibits={altarExhibits}
-        // ★ slotIndex を受け取って URL クエリにする
-        onNavigateToStudio={(slotIndex) => {
-          if (typeof slotIndex === "number") {
-             navigate(`/app/studio?slot=${slotIndex}`);
-          } else {
-             navigate('/app/studio');
-          }
-        }}
+        exhibits={altarExhibits}
+        onNavigateToStudio={() => navigate('/app/studio')}
         onPreview={(ex) => setPreviewExhibit(ex)}
       />
-
 
       <ShopDrawer 
         isOpen={isShopOpen} 
         onClose={() => setIsShopOpen(false)} 
-        exhibits={allAvailableExhibits}
+        exhibits={validExhibits}
         onProceedToCheckout={(_, total) => {
           setCheckoutAmount(total);
           setIsShopOpen(false);
@@ -150,8 +140,8 @@ export function RoomPage() {
         onClose={() => setPreviewExhibit(null)}
         onEdit={(ex) => {
           setPreviewExhibit(null);
-          // 既存データの編集なので、slot_index をクエリに乗せて遷移
-          navigate(`/app/studio?slot=${ex.slot_index}`, { state: { exhibit: ex } });
+          // ★ 新しいパスパターンに基づいて遷移 (slot_index / slotIndex)
+          navigate(`/app/studio/${ex.slotIndex ?? ex.slot_index}`, { state: { exhibit: ex } });
         }}
       />
     </div>

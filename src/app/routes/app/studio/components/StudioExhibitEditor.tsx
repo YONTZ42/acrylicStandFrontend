@@ -1,14 +1,14 @@
 // src/app/routes/app/studio/components/StudioExhibitEditor.tsx
 import React, { useState, useRef } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, useParams } from "react-router-dom";
 import { Upload, Scissors, Layers, Box, Check, Loader2, ImagePlus, PenTool } from "lucide-react";
 import { cn } from "@/shared/utils/cn";
 import { useToast } from "@/app/providers/ToastProvider";
-import { useSelectedGallery } from "@/features/galleries/hooks/useSelectedGallery";
 
+import { useSelectedGallery } from "@/features/galleries/hooks/useSelectedGallery";
+import { useGalleryDetail } from "@/features/galleries/hooks/useGalleryDetail"; // ★ 追加
 import { useExhibitImageUpload } from "@/features/exhibits/hooks/useExhibitImageUpload";
-// ★ 作成した useSaveExhibit を使用
-import { useSaveExhibit } from "@/features/exhibits/hooks/useUpsertExhibit"; 
+import { useUpsertExhibit } from "@/features/exhibits/hooks/useUpsertExhibit";
 import { useExhibitEditorStore, EditorStoreContext } from "@/features/exhibits/hooks/useExhibitEditorStore";
 import { ExhibitPreview3D } from "@/features/exhibits/components/ExhibitEditorModal/ExhibitPreview3D";
 
@@ -21,17 +21,12 @@ type TabKey = "STYLE" | "BACKPLATE" | "MATERIAL";
 export function StudioExhibitEditor() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { slotIndex } = useParams<{ slotIndex?: string }>(); // ★ 追加
   const toast = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const initialExhibit = location.state?.exhibit;
-  
-  // URLクエリのパース (0〜11の範囲外なら null にして新規作成モードにする)
-  const passedSlotIndexRaw = new URLSearchParams(location.search).get("slot");
-  let passedSlotIndex = passedSlotIndexRaw ? parseInt(passedSlotIndexRaw) : null;
-  if (passedSlotIndex !== null && (isNaN(passedSlotIndex) || passedSlotIndex < 0 || passedSlotIndex > 11)) {
-    passedSlotIndex = null;
-  }
+  const passedSlotIndex = slotIndex ? parseInt(slotIndex, 10) : null;
 
   const store = useExhibitEditorStore({
     title: initialExhibit?.title || "",
@@ -44,11 +39,12 @@ export function StudioExhibitEditor() {
 
   const { uploadImageAndGetUrl } = useExhibitImageUpload();
   const { selectedGalleryId } = useSelectedGallery();
-  const saveExhibit = useSaveExhibit(selectedGalleryId || "");
+  const detailQuery = useGalleryDetail(selectedGalleryId); // ★ 追加
+  const upsert = useUpsertExhibit(selectedGalleryId || "");
 
   const [activeTab, setActiveTab] = useState<TabKey>("STYLE");
-  const[isProcessing, setIsProcessing] = useState(false);
-  const [processMsg, setProcessMsg] = useState("");
+  const [isProcessing, setIsProcessing] = useState(false);
+  const[processMsg, setProcessMsg] = useState("");
 
   const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -69,6 +65,22 @@ export function StudioExhibitEditor() {
     setProcessMsg("Saving artwork...");
 
     try {
+      // ★ 保存対象のスロットを決定する
+      let targetSlot = passedSlotIndex;
+      
+      // 新規作成(空)の場合は空いているスロットを探す
+      if (targetSlot === null || isNaN(targetSlot)) {
+        const normalizedExhibits = detailQuery.normalizedExhibits ?? new Array(12).fill(null);
+        targetSlot = normalizedExhibits.findIndex(ex => ex === null);
+        
+        // 0〜11がすべて埋まっている場合
+        if (targetSlot === -1) {
+          toast.error("新しい棚を作ってください"); // 要件通りのエラーメッセージ
+          setIsProcessing(false);
+          return;
+        }
+      }
+
       let fgUrl = store.foregroundUrl;
       let bgUrl = store.backgroundUrl;
       let origUrl = store.originalUrl;
@@ -77,24 +89,17 @@ export function StudioExhibitEditor() {
       if (store.backgroundBlob) bgUrl = await uploadImageAndGetUrl(store.backgroundBlob);
       if (store.originalBlob) origUrl = await uploadImageAndGetUrl(store.originalBlob);
 
-      // 万が一 slotIndex が null の場合は、空きスロットとして 0 をフォールバックで割り当てる
-      const finalSlotIndex = passedSlotIndex !== null ? passedSlotIndex : 0;
-
-      // ★ バックエンドが要求している必須項目を Body にすべて含める
-      const body: any = {
-        gallery: selectedGalleryId,
-        slotIndex: finalSlotIndex,
-        title: store.title || "Untitled",
-        description: store.description,
-        imageOriginalUrl: origUrl || "",
-        imageForegroundUrl: fgUrl || "",
-        imageBackgroundUrl: bgUrl || "",
-        styleConfig: store.styleConfig,
-      };
-
-      await saveExhibit.mutateAsync({
-        slotIndex: finalSlotIndex,
-        body
+      await upsert.mutateAsync({
+        slotIndex: targetSlot,
+        body: {
+          slotIndex: targetSlot,
+          title: store.title || "Untitled",
+          description: store.description,
+          imageOriginalUrl: origUrl || "",
+          imageForegroundUrl: fgUrl || "",
+          imageBackgroundUrl: bgUrl || "",
+          styleConfig: store.styleConfig,
+        }
       });
 
       toast.success("Saved successfully.");
@@ -107,7 +112,6 @@ export function StudioExhibitEditor() {
     }
   };
 
-
   const hasImage = !!(store.foregroundBlob || store.foregroundUrl);
 
   return (
@@ -119,7 +123,7 @@ export function StudioExhibitEditor() {
           <div className="pointer-events-auto bg-white/60 backdrop-blur-md px-5 py-2.5 rounded-full border border-white shadow-sm flex items-center gap-2">
             <PenTool size={16} strokeWidth={1.5} className="text-brand-primary" />
             <span className="text-brand-text font-serif text-sm tracking-widest uppercase">
-              {passedSlotIndex !== null ? `Studio (Slot ${passedSlotIndex})` : "Studio (New)"}
+              {passedSlotIndex !== null ? `Edit Slot ${passedSlotIndex + 1}` : "Studio"}
             </span>
           </div>
           <button 

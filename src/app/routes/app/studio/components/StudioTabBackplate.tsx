@@ -11,10 +11,10 @@ type Props = {
 };
 
 const PRESETS =[
-  { id: "cyber", name: "Cyber City", icon: Building2, prompt: "A neon lit cyberpunk city street background, matching the atmosphere of the subject." },
-  { id: "dream", name: "Dreamy Pastel", icon: Cloud, prompt: "A pastel dreamy magical girl background with clouds and sparkles, matching the subject." },
-  { id: "stage", name: "Live Stage", icon: Mic, prompt: "A gorgeous idol live stage with spotlights and audience glow sticks, matching the subject." },
-  { id: "nature", name: "Nature", icon: Leaf, prompt: "A beautiful sunny nature background with trees and flowers, matching the subject." },
+  { id: "cyber", name: "Cyber City", icon: Building2, prompt: "A neon lit cyberpunk city street background, matching the atmosphere of the subject. 入力した画像に合わせた、背景となるようなイラスト。入力した画像は含めない。" },
+  { id: "dream", name: "Dreamy Pastel", icon: Cloud, prompt: "A pastel dreamy magical girl background with clouds and sparkles, matching the subject. 入力した画像に合わせた、背景となるようなイラスト。入力した画像は含めない。" },
+  { id: "stage", name: "Live Stage", icon: Mic, prompt: "A gorgeous idol live stage with spotlights and audience glow sticks, matching the subject. 入力した画像に合わせた、背景となるようなイラスト。入力した画像は含めない。" },
+  { id: "nature", name: "Nature", icon: Leaf, prompt: "A beautiful sunny nature background with trees and flowers, matching the subject. 入力した画像に合わせた、背景となるようなイラスト。入力した画像は含めない。" },
 ];
 
 export function StudioTabBackplate({ onStartProcess, onEndProcess }: Props) {

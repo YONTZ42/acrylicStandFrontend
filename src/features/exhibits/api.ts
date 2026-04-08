@@ -5,6 +5,7 @@ import type { components, paths } from "@/shared/types/fromBackend/schema";
 
 export type Exhibit = components["schemas"]["Exhibit"];
 
+// --- request/response types (paths 由来) ---
 export type UpsertExhibitReq =
   paths["/api/galleries/{gallery_id}/exhibits/{slot_index}/"]["put"]["requestBody"]["content"]["application/json"];
 
@@ -31,18 +32,18 @@ export async function deleteExhibit(params: {
   await http.del<void>(API_ENDPOINTS.exhibits.remove(galleryId, slotIndex));
 }
 
-// POSTを用いた新規作成用 (クエリパラメータがない場合に使用)
-export type CreateExhibitReq =
+// optional legacy: POST（仕様上は基本使わないが将来用）
+export type CreateExhibitLegacyReq =
   paths["/api/galleries/{gallery_id}/exhibits/"]["post"]["requestBody"]["content"]["application/json"];
-export type CreateExhibitRes =
+export type CreateExhibitLegacyRes =
   paths["/api/galleries/{gallery_id}/exhibits/"]["post"]["responses"][201]["content"]["application/json"];
 
-export async function createExhibit(params: {
+export async function createExhibitLegacy(params: {
   galleryId: string | number;
-  body: CreateExhibitReq;
-}): Promise<CreateExhibitRes> {
+  body: CreateExhibitLegacyReq;
+}): Promise<CreateExhibitLegacyRes> {
   const { galleryId, body } = params;
-  return http.post<CreateExhibitRes, CreateExhibitReq>(
+  return http.post<CreateExhibitLegacyRes, CreateExhibitLegacyReq>(
     API_ENDPOINTS.exhibits.create(galleryId),
     body
   );

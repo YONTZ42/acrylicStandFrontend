@@ -17,22 +17,18 @@ import { RootLayout } from "@/app/layouts/RootLayout";
 import { MarketingLayout } from "@/app/layouts/MarketingLayout";
 import { ViewerLayout } from "@/app/layouts/ViewerLayout";
 import { AppShellLayout } from "@/app/layouts/AppShellLayout";
-import { LegalLayout } from "@/app/layouts/LegalLayout"; // --- 新しく追加 ---
+import { LegalLayout } from "@/app/layouts/LegalLayout"; 
 
-// App Pages (統合後の新設計)
+// App Pages
 import { RoomPage } from "@/app/routes/app/room/RoomPage";
 import { StudioPage } from "@/app/routes/app/studio/StudioPage";
 import { HubPage } from "@/app/routes/app/hub/HubPage";
 
-import { useAuthContext } from "@/features/auth/AuthProvider"; // 追加
+import { useAuthContext } from "@/features/auth/AuthProvider";
 
-
-
-// 認証待ちを行うコンポーネントを追加
 function AuthLoadingGuard({ children }: { children: React.ReactNode }) {
   const { isReady } = useAuthContext();
   
-  // 初期化（Guest ID発行またはUser復元）が終わるまで待機
   if (!isReady) {
     return (
       <div className="flex h-screen w-screen items-center justify-center bg-brand-surface">
@@ -52,7 +48,6 @@ export function AppRouter() {
             <Route path="/" element={<LandingPage />} />
           </Route>
 
-          {/* 法務・汎用ページ用ルーティング */}
           <Route element={<LegalLayout />}>
             <Route path="/terms" element={<TermsPage />} />
             <Route path="/privacy" element={<PrivacyPage />} />
@@ -63,7 +58,6 @@ export function AppRouter() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
 
-
           <Route path="/g/:slug" element={<ViewerLayout />}>
             <Route index element={<PublicGalleryPage />} />
           </Route>
@@ -73,11 +67,14 @@ export function AppRouter() {
               <AppShellLayout />
             </AuthLoadingGuard>}
           >
-            {/* メイン画面を room に設定 */}
             <Route index element={<Navigate to="room" replace />} />
 
             <Route path="room" element={<RoomPage />} />
+            
+            {/* ★ 新規作成と編集用のルーティングを追加 */}
             <Route path="studio" element={<StudioPage />} />
+            <Route path="studio/:slotIndex" element={<StudioPage />} />
+            
             <Route path="hub" element={<HubPage />} />
           </Route>
 

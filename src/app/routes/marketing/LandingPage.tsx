@@ -1,13 +1,15 @@
 // src/app/routes/marketing/LandingPage.tsx
-import { useCallback, useState, useEffect } from "react";
+import { useCallback, useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuthContext } from "@/features/auth/AuthProvider";
-import { ArrowRight, CheckCircle, Heart, Camera, UserPlus, Sparkles, Wand2, MousePointer2, X } from "lucide-react";
+import { ArrowRight, CheckCircle, Heart, Camera, UserPlus, Sparkles, Wand2, MousePointer2, X, Loader2, UploadCloud } from "lucide-react";
 import { cn } from "@/shared/utils/cn";
 
-// --- 3Dプレビュー用のインポート ---
+// --- 3DプレビューとAI処理用のインポート ---
 import { useExhibitEditorStore, EditorStoreContext } from "@/features/exhibits/hooks/useExhibitEditorStore";
 import { ExhibitPreview3D } from "@/features/exhibits/components/ExhibitEditorModal/ExhibitPreview3D";
+import { runRembg } from "@/shared/utils/imageProcessingFromLambda";
+import { useExhibitImageUpload } from "@/features/exhibits/hooks/useExhibitImageUpload";
 
 /**
  * Geminiでの画像生成をサポートするプレースホルダーコンポーネント
@@ -34,15 +36,51 @@ const DUMMY_FG_IMG = "data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.
 
 /**
  * LP上で安全に3D体験をさせるためのインタラクティブコンポーネント
+ * ユーザーが画像をアップロードし、その場でAI透過を体験できます。
  */
 const Interactive3DHero = ({ onStartCreate }: { onStartCreate: () => void }) => {
+  const { ensureGuestId } = useAuthContext();
+  const { uploadImageAndGetUrl } = useExhibitImageUpload();
+  
   const [isInteractive, setIsInteractive] = useState(false);
+  const[isProcessing, setIsProcessing] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   // 3Dプレビューに渡すダミーデータストア
   const store = useExhibitEditorStore({
     foregroundUrl: DUMMY_FG_IMG,
     styleConfig: { depth: 8, foregroundEffect: "none", backgroundEffect: "none" },
   });
+
+  // 画像アップロード＆透過処理
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // ファイル選択時点でインタラクティブモードとローディングをオン
+    setIsInteractive(true);
+    setIsProcessing(true);
+
+    try {
+      // S3アップロード用の認可情報を取得するためゲストIDを確保
+      await ensureGuestId();
+      
+      // Rembgで自動切り抜き（大サイズ用に uploader も渡す）
+      const resultBlob = await runRembg(file, "isnet-general-use", uploadImageAndGetUrl);
+      
+      // 処理結果を3Dプレビューの前景として適用
+      store.setLayerBlob("foreground", resultBlob);
+    } catch (err) {
+      console.error("Cutout error:", err);
+      alert("画像の処理に失敗しました。別の画像をお試しください。");
+    } finally {
+      setIsProcessing(false);
+      // 同じ画像を再度選べるようにinputをリセット
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  };
 
   // 3D操作中はページ全体のスクロールをロックする
   useEffect(() => {
@@ -52,7 +90,7 @@ const Interactive3DHero = ({ onStartCreate }: { onStartCreate: () => void }) => 
       document.body.style.overflow = "";
     }
     return () => { document.body.style.overflow = ""; };
-  }, [isInteractive]);
+  },[isInteractive]);
 
   return (
     <div className="relative w-full aspect-square md:aspect-[4/3] rounded-[2rem] shadow-elegant bg-brand-bg-soft overflow-hidden border border-brand-border">
@@ -66,17 +104,35 @@ const Interactive3DHero = ({ onStartCreate }: { onStartCreate: () => void }) => 
       
       {/* オーバーレイUI */}
       {!isInteractive ? (
-        <div 
-          className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-transparent cursor-pointer group"
-          onClick={() => setIsInteractive(true)}
-        >
-           <div className="bg-white/90 backdrop-blur-sm px-8 py-4 rounded-full shadow-lg border border-brand-border text-brand-text font-serif tracking-widest text-xs flex items-center gap-3 group-hover:bg-brand-primary group-hover:text-white group-hover:border-brand-primary transition-all duration-300 transform group-hover:scale-105">
+        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-transparent gap-4">
+           {/* タッチして操作 */}
+           <button 
+             onClick={() => setIsInteractive(true)}
+             className="bg-white/90 backdrop-blur-sm px-8 py-3.5 rounded-full shadow-lg border border-brand-border text-brand-text font-serif tracking-widest text-[11px] flex items-center gap-3 hover:bg-brand-primary hover:text-white hover:border-brand-primary transition-all duration-300 transform hover:scale-105"
+           >
              <MousePointer2 size={16} strokeWidth={1.5} />
-             Touch to interact 3D
-           </div>
+             TOUCH TO INTERACT 3D
+           </button>
+           
+           {/* 画像をアップロードして試す */}
+           <label className="bg-brand-secondary/90 text-white backdrop-blur-sm px-8 py-3.5 rounded-full shadow-lg border border-brand-secondary font-serif tracking-widest text-[11px] flex items-center gap-3 hover:bg-black transition-all duration-300 transform hover:scale-105 cursor-pointer">
+             <UploadCloud size={16} strokeWidth={1.5} />
+             UPLOAD YOUR IMAGE
+             <input type="file" accept="image/*" className="hidden" ref={fileInputRef} onChange={handleFileUpload} />
+           </label>
         </div>
       ) : (
         <>
+          {/* ローディングオーバーレイ */}
+          {isProcessing && (
+            <div className="absolute inset-0 z-30 bg-white/70 backdrop-blur-md flex flex-col items-center justify-center transition-all animate-in fade-in">
+              <Loader2 className="animate-spin text-brand-primary mb-4" size={32} strokeWidth={1.5} />
+              <div className="text-brand-text font-serif text-sm tracking-widest uppercase animate-pulse">
+                AI Magic in Progress...
+              </div>
+            </div>
+          )}
+
           {/* 閉じるボタン */}
           <div className="absolute top-4 right-4 z-20 animate-in fade-in zoom-in duration-300">
             <button 
@@ -88,19 +144,26 @@ const Interactive3DHero = ({ onStartCreate }: { onStartCreate: () => void }) => 
             </button>
           </div>
           
-          {/* ダイレクト誘導ボタン */}
-          <div className="absolute bottom-6 left-6 z-20 animate-in fade-in duration-500 delay-300">
-            <button 
-              onClick={(e) => { e.stopPropagation(); onStartCreate(); }}
-              className="bg-brand-primary text-white px-6 py-3 rounded-full font-serif tracking-widest text-[10px] uppercase shadow-lg hover:bg-brand-primary-hover transition-colors flex items-center gap-2"
-            >
-              <Wand2 size={14} strokeWidth={1.5} />
-              Create Yours
-            </button>
-          </div>
+          {/* ダイレクト誘導ボタンと再アップロード */}
+          {!isProcessing && (
+            <div className="absolute bottom-6 left-0 right-0 z-20 flex flex-wrap gap-3 animate-in fade-in duration-500 justify-center px-4">
+              <button 
+                onClick={(e) => { e.stopPropagation(); onStartCreate(); }}
+                className="bg-brand-primary text-white px-6 py-3 rounded-full font-serif tracking-widest text-[10px] uppercase shadow-lg hover:bg-brand-primary-hover transition-colors flex items-center gap-2"
+              >
+                <Wand2 size={14} strokeWidth={1.5} />
+                Create Yours
+              </button>
+              <label className="bg-white text-brand-text px-5 py-3 rounded-full font-serif tracking-widest text-[10px] uppercase shadow-lg border border-brand-border hover:border-brand-primary hover:text-brand-primary transition-colors flex items-center gap-2 cursor-pointer">
+                <UploadCloud size={14} strokeWidth={1.5} />
+                Try Another
+                <input type="file" accept="image/*" className="hidden" onChange={handleFileUpload} />
+              </label>
+            </div>
+          )}
 
           {/* 操作ヒント */}
-          <div className="absolute bottom-6 left-0 right-0 text-center pointer-events-none z-10 animate-in fade-in duration-500 delay-300 hidden sm:block">
+          <div className="absolute top-6 left-6 text-center pointer-events-none z-10 animate-in fade-in duration-500 delay-300 hidden sm:block">
             <span className="bg-white/80 text-brand-text px-4 py-2 rounded-full backdrop-blur-md border border-brand-border font-light tracking-widest text-[9px] uppercase shadow-sm">
               Drag to rotate / Scroll to zoom
             </span>
@@ -123,7 +186,7 @@ export function LandingPage() {
     setIsNavigating(true);
     try {
       await ensureGuestId();
-      navigate("/app/room");
+      navigate("/app/studio");
     } catch (e) {
       console.error("Failed to ensure guest session:", e);
       setIsNavigating(false);

@@ -1,22 +1,20 @@
 // src/app/routes/marketing/LandingPage.tsx
-import { useCallback, useState } from "react";
+import { useCallback, useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuthContext } from "@/features/auth/AuthProvider";
-import { ArrowRight, CheckCircle, Heart, Camera, UserPlus, Sparkles, Wand2 } from "lucide-react";
+import { ArrowRight, CheckCircle, Heart, Camera, UserPlus, Sparkles, Wand2, MousePointer2, X } from "lucide-react";
 import { cn } from "@/shared/utils/cn";
+
+// --- 3Dプレビュー用のインポート ---
+import { useExhibitEditorStore, EditorStoreContext } from "@/features/exhibits/hooks/useExhibitEditorStore";
+import { ExhibitPreview3D } from "@/features/exhibits/components/ExhibitEditorModal/ExhibitPreview3D";
 
 /**
  * Geminiでの画像生成をサポートするプレースホルダーコンポーネント
  */
 const ImagePlaceholder = ({ 
-  text, 
-  prompt, 
-  className = "" 
-}: { 
-  text: string; 
-  prompt: string; 
-  className?: string; 
-}) => (
+  text, prompt, className = "" 
+}: { text: string; prompt: string; className?: string; }) => (
   <div className={cn("relative overflow-hidden bg-brand-bg border border-brand-border flex flex-col items-center justify-center p-8 text-center group", className)}>
     <div className="absolute inset-0 bg-gradient-to-tr from-brand-primary/5 to-transparent pointer-events-none" />
     <span className="text-brand-primary/60 font-serif text-2xl tracking-widest mb-4">
@@ -31,6 +29,89 @@ const ImagePlaceholder = ({
   </div>
 );
 
+// --- ダミーの3Dアクスタ用画像（上品なゴールド系のSVG） ---
+const DUMMY_FG_IMG = "data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='500' viewBox='0 0 400 500'%3E%3Cdefs%3E%3ClinearGradient id='grad' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' style='stop-color:%23C5A880;stop-opacity:1' /%3E%3Cstop offset='100%25' style='stop-color:%23D9C5B2;stop-opacity:1' /%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M200,50 C300,50 350,150 350,250 C350,350 300,450 200,450 C100,450 50,350 50,250 C50,150 100,50 200,50 Z' fill='url(%23grad)' opacity='0.9'/%3E%3Ctext x='200' y='240' font-family='serif' font-size='28' fill='%23ffffff' text-anchor='middle' letter-spacing='4'%3E3D PREVIEW%3C/text%3E%3Ctext x='200' y='270' font-family='sans-serif' font-size='11' fill='%23ffffff' text-anchor='middle' opacity='0.8' letter-spacing='2'%3ESAMPLE ARTWORK%3C/text%3E%3C/svg%3E";
+
+/**
+ * LP上で安全に3D体験をさせるためのインタラクティブコンポーネント
+ */
+const Interactive3DHero = ({ onStartCreate }: { onStartCreate: () => void }) => {
+  const [isInteractive, setIsInteractive] = useState(false);
+  
+  // 3Dプレビューに渡すダミーデータストア
+  const store = useExhibitEditorStore({
+    foregroundUrl: DUMMY_FG_IMG,
+    styleConfig: { depth: 8, foregroundEffect: "none", backgroundEffect: "none" },
+  });
+
+  // 3D操作中はページ全体のスクロールをロックする
+  useEffect(() => {
+    if (isInteractive) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => { document.body.style.overflow = ""; };
+  }, [isInteractive]);
+
+  return (
+    <div className="relative w-full aspect-square md:aspect-[4/3] rounded-[2rem] shadow-elegant bg-brand-bg-soft overflow-hidden border border-brand-border">
+      
+      {/* 3Dキャンバス本体 */}
+      <EditorStoreContext.Provider value={store}>
+        <div className={cn("w-full h-full transition-all duration-500", !isInteractive && "pointer-events-none opacity-90 blur-[2px]")}>
+          <ExhibitPreview3D />
+        </div>
+      </EditorStoreContext.Provider>
+      
+      {/* オーバーレイUI */}
+      {!isInteractive ? (
+        <div 
+          className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-transparent cursor-pointer group"
+          onClick={() => setIsInteractive(true)}
+        >
+           <div className="bg-white/90 backdrop-blur-sm px-8 py-4 rounded-full shadow-lg border border-brand-border text-brand-text font-serif tracking-widest text-xs flex items-center gap-3 group-hover:bg-brand-primary group-hover:text-white group-hover:border-brand-primary transition-all duration-300 transform group-hover:scale-105">
+             <MousePointer2 size={16} strokeWidth={1.5} />
+             Touch to interact 3D
+           </div>
+        </div>
+      ) : (
+        <>
+          {/* 閉じるボタン */}
+          <div className="absolute top-4 right-4 z-20 animate-in fade-in zoom-in duration-300">
+            <button 
+              onClick={() => setIsInteractive(false)}
+              className="bg-brand-secondary text-white px-5 py-2.5 rounded-full font-serif tracking-widest text-[10px] uppercase shadow-lg border border-brand-secondary hover:bg-black transition-colors flex items-center gap-2"
+            >
+              <X size={14} strokeWidth={1.5} />
+              Close
+            </button>
+          </div>
+          
+          {/* ダイレクト誘導ボタン */}
+          <div className="absolute bottom-6 left-6 z-20 animate-in fade-in duration-500 delay-300">
+            <button 
+              onClick={(e) => { e.stopPropagation(); onStartCreate(); }}
+              className="bg-brand-primary text-white px-6 py-3 rounded-full font-serif tracking-widest text-[10px] uppercase shadow-lg hover:bg-brand-primary-hover transition-colors flex items-center gap-2"
+            >
+              <Wand2 size={14} strokeWidth={1.5} />
+              Create Yours
+            </button>
+          </div>
+
+          {/* 操作ヒント */}
+          <div className="absolute bottom-6 left-0 right-0 text-center pointer-events-none z-10 animate-in fade-in duration-500 delay-300 hidden sm:block">
+            <span className="bg-white/80 text-brand-text px-4 py-2 rounded-full backdrop-blur-md border border-brand-border font-light tracking-widest text-[9px] uppercase shadow-sm">
+              Drag to rotate / Scroll to zoom
+            </span>
+          </div>
+        </>
+      )}
+    </div>
+  );
+};
+
+
 export function LandingPage() {
   const navigate = useNavigate();
   const { status, ensureGuestId } = useAuthContext();
@@ -42,7 +123,7 @@ export function LandingPage() {
     setIsNavigating(true);
     try {
       await ensureGuestId();
-      navigate("/app/studio");
+      navigate("/app/room");
     } catch (e) {
       console.error("Failed to ensure guest session:", e);
       setIsNavigating(false);
@@ -142,12 +223,8 @@ export function LandingPage() {
           </div>
 
           <div className="flex-1 w-full relative">
-            <div className="absolute inset-0 bg-brand-primary/5 rounded-[2rem] transform rotate-3 scale-105" />
-            <ImagePlaceholder 
-              className="w-full aspect-square md:aspect-[4/3] rounded-[2rem] shadow-elegant relative z-10 bg-white"
-              text="Hero Image"
-              prompt="自然光が差し込むリビングの白い大理石のテーブル。ドライフラワーの横に飾られた、赤ちゃんの笑顔の透明なアクリルスタンドと、洗練されたアニメ風キャラクターのアクスタ。シネマティックで上質な、Vogueのインテリア誌のような実写スタイルの写真。"
-            />
+            {/* 新しいインタラクティブ3Dプレビュー */}
+            <Interactive3DHero onStartCreate={handleStartCreate} />
           </div>
         </section>
 

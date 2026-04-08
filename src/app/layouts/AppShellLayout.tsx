@@ -1,3 +1,4 @@
+// src/app/layouts/AppShellLayout.tsx
 import { Outlet } from "react-router-dom";
 import { AppHeader } from "./AppHeader";
 import { AppFooter } from "./AppFooter";
@@ -11,8 +12,8 @@ export function AppShellLayout() {
       <AppHeader />
 
       {/* 2. メインコンテンツ領域（残りの高さをすべて埋める） */}
-      {/* relativeを指定することで、RoomPage等の absolute inset-0 がこの枠内に収まります */}
-      <main className="flex-1 relative w-full h-full flex flex-col">
+      {/* min-h-0 を追加し、内部のコンポーネントが親のサイズを超えて膨張するのを防ぐ */}
+      <main className="flex-1 relative w-full h-full flex flex-col min-h-0">
         <Outlet />
       </main>
 

@@ -1,3 +1,4 @@
+// src/app/routes/app/studio/components/StudioExhibitEditor.tsx
 import React, { useState, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Upload, Scissors, Layers, Box, Check, Loader2, ImagePlus, PenTool } from "lucide-react";
@@ -6,7 +7,8 @@ import { useToast } from "@/app/providers/ToastProvider";
 import { useSelectedGallery } from "@/features/galleries/hooks/useSelectedGallery";
 
 import { useExhibitImageUpload } from "@/features/exhibits/hooks/useExhibitImageUpload";
-import { useUpsertExhibit } from "@/features/exhibits/hooks/useUpsertExhibit";
+// ★ 作成した useSaveExhibit を使用
+import { useSaveExhibit } from "@/features/exhibits/hooks/useUpsertExhibit"; 
 import { useExhibitEditorStore, EditorStoreContext } from "@/features/exhibits/hooks/useExhibitEditorStore";
 import { ExhibitPreview3D } from "@/features/exhibits/components/ExhibitEditorModal/ExhibitPreview3D";
 
@@ -23,9 +25,13 @@ export function StudioExhibitEditor() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const initialExhibit = location.state?.exhibit;
-  const passedSlotIndex = new URLSearchParams(location.search).get("slot") 
-                          ? parseInt(new URLSearchParams(location.search).get("slot")!) 
-                          : null;
+  
+  // URLクエリのパース (0〜11の範囲外なら null にして新規作成モードにする)
+  const passedSlotIndexRaw = new URLSearchParams(location.search).get("slot");
+  let passedSlotIndex = passedSlotIndexRaw ? parseInt(passedSlotIndexRaw) : null;
+  if (passedSlotIndex !== null && (isNaN(passedSlotIndex) || passedSlotIndex < 0 || passedSlotIndex > 11)) {
+    passedSlotIndex = null;
+  }
 
   const store = useExhibitEditorStore({
     title: initialExhibit?.title || "",
@@ -38,11 +44,11 @@ export function StudioExhibitEditor() {
 
   const { uploadImageAndGetUrl } = useExhibitImageUpload();
   const { selectedGalleryId } = useSelectedGallery();
-  const upsert = useUpsertExhibit(selectedGalleryId || "");
+  const saveExhibit = useSaveExhibit(selectedGalleryId || "");
 
   const [activeTab, setActiveTab] = useState<TabKey>("STYLE");
-  const [isProcessing, setIsProcessing] = useState(false);
-  const[processMsg, setProcessMsg] = useState("");
+  const[isProcessing, setIsProcessing] = useState(false);
+  const [processMsg, setProcessMsg] = useState("");
 
   const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -71,19 +77,24 @@ export function StudioExhibitEditor() {
       if (store.backgroundBlob) bgUrl = await uploadImageAndGetUrl(store.backgroundBlob);
       if (store.originalBlob) origUrl = await uploadImageAndGetUrl(store.originalBlob);
 
-      const targetSlot = passedSlotIndex !== null ? passedSlotIndex : 12 + Math.floor(Math.random() * 80);
+      // 万が一 slotIndex が null の場合は、空きスロットとして 0 をフォールバックで割り当てる
+      const finalSlotIndex = passedSlotIndex !== null ? passedSlotIndex : 0;
 
-      await upsert.mutateAsync({
-        slotIndex: targetSlot,
-        body: {
-          slotIndex: targetSlot,
-          title: store.title || "Untitled",
-          description: store.description,
-          imageOriginalUrl: origUrl || "",
-          imageForegroundUrl: fgUrl || "",
-          imageBackgroundUrl: bgUrl || "",
-          styleConfig: store.styleConfig,
-        }
+      // ★ バックエンドが要求している必須項目を Body にすべて含める
+      const body: any = {
+        gallery: selectedGalleryId,
+        slotIndex: finalSlotIndex,
+        title: store.title || "Untitled",
+        description: store.description,
+        imageOriginalUrl: origUrl || "",
+        imageForegroundUrl: fgUrl || "",
+        imageBackgroundUrl: bgUrl || "",
+        styleConfig: store.styleConfig,
+      };
+
+      await saveExhibit.mutateAsync({
+        slotIndex: finalSlotIndex,
+        body
       });
 
       toast.success("Saved successfully.");
@@ -96,17 +107,20 @@ export function StudioExhibitEditor() {
     }
   };
 
+
   const hasImage = !!(store.foregroundBlob || store.foregroundUrl);
 
   return (
     <EditorStoreContext.Provider value={store}>
-      <div className="absolute inset-0 w-full h-full bg-brand-bg flex flex-col font-sans overflow-hidden">
+      <div className="absolute inset-0 w-full h-full bg-brand-bg flex flex-col font-sans overflow-hidden min-h-0">
         
         {/* HEADER */}
         <div className="absolute top-4 left-4 right-4 z-20 flex justify-between items-center pointer-events-none">
           <div className="pointer-events-auto bg-white/60 backdrop-blur-md px-5 py-2.5 rounded-full border border-white shadow-sm flex items-center gap-2">
             <PenTool size={16} strokeWidth={1.5} className="text-brand-primary" />
-            <span className="text-brand-text font-serif text-sm tracking-widest uppercase">Studio</span>
+            <span className="text-brand-text font-serif text-sm tracking-widest uppercase">
+              {passedSlotIndex !== null ? `Studio (Slot ${passedSlotIndex})` : "Studio (New)"}
+            </span>
           </div>
           <button 
             onClick={() => navigate("/app/room")}
@@ -117,7 +131,7 @@ export function StudioExhibitEditor() {
         </div>
 
         {/* 3D PREVIEW (60%) */}
-        <div className="flex-[5.5] sm:flex-[6] relative bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-white via-brand-bg-soft to-[#E5E0D8]">
+        <div className="flex-[5.5] sm:flex-[6] relative bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-white via-brand-bg-soft to-[#E5E0D8] min-h-0">
           {hasImage ? (
             <ExhibitPreview3D />
           ) : (
@@ -141,10 +155,10 @@ export function StudioExhibitEditor() {
         </div>
 
         {/* DRAWER (40%) */}
-        <div className="flex-[4.5] sm:flex-[4] bg-white border-t border-brand-border rounded-t-3xl shadow-elegant flex flex-col relative z-20">
+        <div className="flex-[4.5] sm:flex-[4] bg-white border-t border-brand-border rounded-t-3xl shadow-elegant flex flex-col relative z-20 min-h-0">
           
           {!hasImage ? (
-            <div className="flex-1 flex flex-col items-center justify-center p-8 text-center space-y-8">
+            <div className="flex-1 flex flex-col items-center justify-center p-8 text-center space-y-8 min-h-0">
               <div>
                 <h2 className="text-xl font-serif text-brand-text tracking-wide">Create Artwork</h2>
                 <p className="text-[11px] font-light text-brand-text-muted mt-3 tracking-wider leading-relaxed">
@@ -159,10 +173,9 @@ export function StudioExhibitEditor() {
               </label>
             </div>
           ) : (
-            <div className="flex-1 flex flex-col h-full overflow-hidden">
+            <div className="flex-1 flex flex-col h-full overflow-hidden min-h-0">
               
-              {/* TABS */}
-              <div className="flex items-center gap-8 px-6 pt-6 pb-3 overflow-x-auto custom-scrollbar border-b border-brand-border">
+              <div className="flex items-center gap-8 px-6 pt-6 pb-3 overflow-x-auto custom-scrollbar border-b border-brand-border shrink-0">
                 {[
                   { id: "STYLE", icon: Scissors, label: "Cutout" },
                   { id: "BACKPLATE", icon: Layers, label: "Backplate" },
@@ -181,15 +194,13 @@ export function StudioExhibitEditor() {
                 ))}
               </div>
 
-              {/* TAB CONTENT */}
-              <div className="flex-1 overflow-y-auto p-6 custom-scrollbar bg-brand-bg/30">
+              <div className="flex-1 overflow-y-auto p-6 custom-scrollbar bg-brand-bg/30 min-h-0">
                 {activeTab === "STYLE" && <StudioTabCutout onStartProcess={(m) => { setProcessMsg(m); setIsProcessing(true); }} onEndProcess={() => setIsProcessing(false)} />}
                 {activeTab === "BACKPLATE" && <StudioTabBackplate onStartProcess={(m) => { setProcessMsg(m); setIsProcessing(true); }} onEndProcess={() => setIsProcessing(false)} />}
                 {activeTab === "MATERIAL" && <StudioTabMaterial />}
               </div>
 
-              {/* FOOTER */}
-              <div className="p-5 border-t border-brand-border bg-white pb-safe flex justify-between items-center">
+              <div className="p-5 border-t border-brand-border bg-white pb-safe flex justify-between items-center shrink-0">
                 <label className="flex items-center gap-3 cursor-pointer text-brand-text-muted hover:text-brand-text transition-colors group">
                   <div className="w-10 h-10 rounded-full bg-brand-bg flex items-center justify-center border border-brand-border group-hover:border-brand-primary/50 transition-colors">
                     <Upload size={16} strokeWidth={1.5} />

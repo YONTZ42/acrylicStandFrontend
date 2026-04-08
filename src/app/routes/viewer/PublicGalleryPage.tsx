@@ -11,6 +11,7 @@ import { GalleryDetailPreview3D } from "@/features/exhibits/components/playcanva
 // 3Dプレビュー用のフックとコンポーネントを追加
 import { useExhibitEditorStore, EditorStoreContext } from "@/features/exhibits/hooks/useExhibitEditorStore";
 import { ExhibitPreview3D } from "@/features/exhibits/components/ExhibitEditorModal/ExhibitPreview3D";
+import { AppHeader } from "@/app/layouts/AppHeader";
 
 type ExhibitPublic = components["schemas"]["ExhibitPublic"];
 
@@ -260,8 +261,11 @@ export function PublicGalleryPage() {
   );
 
   return (
+
     <div className="absolute inset-0 w-full h-full bg-[#050506] overflow-hidden font-sans select-none">
-      
+
+
+
       {/* 3D View (Background) 
           WebGPUの衝突（コンテキストロスト）を防ぐため、プレビューが開いている間は完全にアンマウントする */}
       <div className="absolute inset-0 z-0 bg-[#050506]">
@@ -328,5 +332,9 @@ export function PublicGalleryPage() {
         />
       )}
     </div>
+ 
+
+
+
   );
 }

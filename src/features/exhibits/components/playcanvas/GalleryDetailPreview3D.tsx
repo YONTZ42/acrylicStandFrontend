@@ -419,7 +419,7 @@ const GalleryDetailPreview3DInner: React.FC<{ slots: any[] }> = ({ slots }) => {
       slotGroup.setLocalPosition(xPos, yPos, 0);
 
       const style = {
-        depth: exhibit.styleConfig?.depth ?? 5,
+        depth: exhibit.styleConfig?.depth ?? 8,
         foregroundEffect: exhibit.styleConfig?.foregroundEffect ?? "none",
         backgroundEffect: exhibit.styleConfig?.backgroundEffect ?? "none",
       };
